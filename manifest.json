@@ -1,0 +1,35 @@
+{
+  "id": "supermart-control-gasto-familiar",
+  "name": "SuperMart TOTAL",
+  "short_name": "SuperMart",
+  "description": "Control de gastos y gestión práctica de la compra familiar en supermercados.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#6F4E37",
+  "theme_color": "#6F4E37",
+  "categories": ["shopping", "finance"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Pantalla principal de SuperMart"
+    }
+  ]
+}
