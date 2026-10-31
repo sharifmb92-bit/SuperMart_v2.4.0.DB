@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SuperMart_v 2.4.0</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6F4E37">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <style>
+        :root { 
+            --fondo: #6F4E37; --tarjeta: #E6D5B8; --texto: #3D2B1F; 
+            --gris: #4d4d4d; --azul: #2C5E8A; --verde: #27ae60; --rojo: #c0392b;
+            --fuente-btn: 14px;
+        }
+        body.noche { --fondo: #2c1e16; --tarjeta: #5d4037; --texto: #f5f5f5; }
+
+        body { font-family: sans-serif; background: var(--fondo); margin: 0; padding-bottom: 260px; color: white; transition: 0.3s; overflow-x: hidden; position: relative; }
+        
+        .header { background: var(--tarjeta); padding: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.3); color: var(--texto); }
+        .controles-extra { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .btn-mini { background: rgba(0,0,0,0.1); border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; color: var(--texto); cursor: pointer; }
+
+        /* Buscador con Letra Grande */
+        .buscador-caja { margin-bottom: 8px; position: relative; }
+        .buscador-input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 2px solid rgba(0,0,0,0.2); box-sizing: border-box; font-size: 16px; font-weight: bold; color: #000; }
+        .sugerencias-busqueda { background: #fff; color: #333; border-radius: 10px; margin-top: 4px; max-height: 180px; overflow-y: auto; position: absolute; width: 100%; z-index: 150; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; }
+        .sugerencia-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 15px; cursor: pointer; }
+
+        /* Notificación Flotante */
+        #toast { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--verde); color: white; padding: 12px 20px; border-radius: 25px; font-weight: bold; font-size: 15px; z-index: 400; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+        .total-info { display: flex; justify-content: space-between; align-items: center; }
+        #total { font-size: 28px; font-weight: bold; }
+
+        .contenedor-semaforo { width: 100%; background: #ccc; height: 10px; border-radius: 5px; overflow: hidden; margin: 10px 0; }
+        #barra-progreso { width: 0%; height: 100%; background: var(--verde); transition: 0.5s; }
+
+        .selector-unidades { display: flex; justify-content: space-around; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; margin: 10px 0; align-items: center; }
+        .u-btn { background: var(--tarjeta); border: none; padding: 10px 18px; border-radius: 8px; color: var(--texto); font-weight: bold; cursor: pointer; }
+        .u-btn.active { background: var(--azul); color: white; transform: scale(1.1); }
+
+        .tabs { display: flex; gap: 5px; padding: 0 10px; margin-bottom: 10px; }
+        .tab { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 13px; background: rgba(0,0,0,0.2); cursor: pointer; }
+        .tab.active { background: var(--fondo); color: white; }
+
+        .pantalla { display: none; padding: 10px; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .pantalla.active { display: grid; }
+        
+        .boton { background: var(--tarjeta); border-radius: 15px; padding: 12px; display: flex; flex-direction: column; align-items: center; border: none; color: var(--texto); box-shadow: 0 3px 6px rgba(0,0,0,0.2); position: relative; cursor: pointer; }
+        .boton.resaltado { outline: 3px solid #f1c40f; transform: scale(1.03); }
+        .boton i { font-size: 26px; margin-bottom: 6px; }
+        .boton span { font-weight: bold; font-size: var(--fuente-btn); text-align: center; line-height: 1.1; word-break: break-word; }
+        .boton .subtotal-tag { font-size: var(--fuente-btn); font-weight: bold; color: var(--azul); margin-top: 5px; background: rgba(255,255,255,0.7); padding: 2px 8px; border-radius: 10px; display: inline-block; max-width: 85%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .historial { background: rgba(0,0,0,0.2); margin: 10px; padding: 12px; border-radius: 10px; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .historial:active { background: rgba(0,0,0,0.35); }
+
+        .panel-fijo { position: fixed; bottom: 0; left: 0; right: 0; background: #2D3436; padding: 12px; border-top: 3px solid var(--tarjeta); z-index: 200; }
+        .fila-ajuste { display: flex; justify-content: space-around; align-items: center; }
+        .btn-a { width: 50px; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 300; align-items: center; justify-content: center; padding: 15px; }
+        .modal.active { display: flex; }
+        .modal-contenido { background: var(--tarjeta); color: var(--texto); padding: 18px; border-radius: 15px; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 8px; }
+        .item-carro { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.08); }
+
+        .item-habitual-card { background: rgba(0,0,0,0.05); padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .item-habitual-card.en-casa { background: rgba(39, 174, 96, 0.18); border: 1px solid var(--verde); }
+        .item-habitual-info { display: flex; flex-direction: column; gap: 4px; }
+        .item-habitual-precio-badge { background: var(--azul); color: white; font-size: 12px; font-weight: bold; padding: 2px 8px; border-radius: 6px; align-self: flex-start; }
+        .item-habitual-acciones { display: flex; gap: 6px; align-items: center; }
+
+        .form-nuevo-producto { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; background: rgba(0,0,0,0.05); padding: 10px; border-radius: 10px; }
+        .inputs-linea { display: flex; gap: 8px; }
+        .inputs-linea input { padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 13px; box-sizing: border-box; }
+        .botones-accion-linea { display: flex; gap: 8px; align-items: center; }
+        .btn-accion { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+        .calc-pantalla { background: #222; color: #00ff66; text-align: right; font-size: 24px; font-family: monospace; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .btn-calc { padding: 14px 5px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; background: rgba(0,0,0,0.1); color: var(--texto); cursor: pointer; text-align: center; }
+        .btn-calc.op { background: var(--azul); color: white; }
+        .btn-calc.igual { background: var(--verde); color: white; }
+        .btn-calc.zero { grid-column: span 2; }
+        .box-oferta { background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; margin-top: 12px; }
+        .box-oferta input { padding: 6px; border-radius: 6px; border: 1px solid #ccc; width: 60px; font-size: 12px; }
+
+        /* Estilo Botón Café en Ajustes */
+        .btn-cafe-ajustes { background: #FFDD00; color: #333; font-weight: bold; border: none; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; width: 100%; margin-top: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        .f { color: #D35400; } .c { color: #A93226; } .l { color: #2E86C1; } .h { color: #512E5F; } .d { color: #795548; }
+
+        .brand-stamp { position: absolute; bottom: 5px; right: 8px; font-size: 9px; opacity: 0.3; color: var(--texto); pointer-events: none; user-select: none; display: flex; align-items: center; gap: 4px; }
+    </style>
+</head>
+<body>
+
+<div id="toast">✓ ¡Añadido al carro!</div>
+
+<div class="header">
+    <div class="controles-extra">
+        <div>
+            <button class="btn-mini" onclick="ajustarLetra(1)">T+</button>
+            <button class="btn-mini" onclick="ajustarLetra(-1)">T-</button>
+            <button class="btn-mini" onclick="toggleModoNoche()"><i class="fas fa-moon"></i></button>
+            <button class="btn-mini" onclick="abrirModal('modal-tutorial')" title="Instrucciones"><i class="fas fa-circle-question"></i></button>
+        </div>
+        <div style="display:flex; gap:6px;">
+            <button class="btn-mini" style="background:var(--azul); color:white;" onclick="abrirModal('modal-calc')"><i class="fas fa-calculator"></i></button>
+            <button class="btn-mini" onclick="abrirModal('modal-desglose')"><i class="fas fa-shopping-basket"></i> Carro</button>
+            <button class="btn-mini" onclick="abrirModal('modal-ajustes')"><i class="fas fa-gear"></i></button>
+        </div>
+    </div>
+    
+    <!-- Buscador de Letra Grande con Sugerencias -->
+    <div class="buscador-caja">
+        <input type="text" class="buscador-input" id="buscador" placeholder="🔍 Escribe producto (ej. tomate, leche)..." oninput="filtrarProductos()">
+        <div class="sugerencias-busqueda" id="sugerencias"></div>
+    </div>
+
+    <div class="total-info">
+        <div><h1 style="margin:0; font-size:18px;">🛒 Gasto Familiar</h1><small id="status">Límite: 150.00€</small></div>
+        <div class="total-caja"><span id="total">0.00€</span></div>
+    </div>
+    <div class="contenedor-semaforo"><div id="barra-progreso"></div></div>
+    <div class="tabs">
+        <div class="tab active" id="t1" onclick="cambiarTab(1)">ALIMENTACIÓN</div>
+        <div class="tab" id="t2" onclick="cambiarTab(2)">HOGAR Y VARIOS</div>
+    </div>
+</div>
+
+<div class="pantalla active" id="p1">
+    <button class="boton" id="btn-Fruta" onclick="abrirCategoria('Fruta')"><i class="fas fa-apple-whole f"></i><span>Fruta</span><span class="subtotal-tag" id="sub-Fruta">0.00€</span></button>
+    <button class="boton" id="btn-Verdura" onclick="abrirCategoria('Verdura')"><i class="fas fa-carrot f"></i><span>Verdura</span><span class="subtotal-tag" id="sub-Verdura">0.00€</span></button>
+    <button class="boton" id="btn-Carne" onclick="abrirCategoria('Carne')"><i class="fas fa-drumstick-bite c"></i><span>Carnicería</span><span class="subtotal-tag" id="sub-Carne">0.00€</span></button>
+    <button class="boton" id="btn-Pescado" onclick="abrirCategoria('Pescado')"><i class="fas fa-fish l"></i><span>Pescadería</span><span class="subtotal-tag" id="sub-Pescado">0.00€</span></button>
+    <button class="boton" id="btn-Leche" onclick="abrirCategoria('Leche')"><i class="fas fa-droplet l"></i><span>Leche</span><span class="subtotal-tag" id="sub-Leche">0.00€</span></button>
+    <button class="boton" id="btn-Yogures" onclick="abrirCategoria('Yogures')"><i class="fas fa-ice-cream l"></i><span>Lácteos</span><span class="subtotal-tag" id="sub-Yogures">0.00€</span></button>
+    <button class="boton" id="btn-Embutido" onclick="abrirCategoria('Embutido')"><i class="fas fa-bacon c"></i><span>Embutidos</span><span class="subtotal-tag" id="sub-Embutido">0.00€</span></button>
+    <button class="boton" id="btn-Pan" onclick="abrirCategoria('Pan')"><i class="fas fa-bread-slice d"></i><span>Pan/Bollería</span><span class="subtotal-tag" id="sub-Pan">0.00€</span></button>
+    <button class="boton" id="btn-Pasta/Arroz" onclick="abrirCategoria('Pasta/Arroz')"><i class="fas fa-box d"></i><span>Legumbres/Pasta/Arroz</span><span class="subtotal-tag" id="sub-Pasta/Arroz">0.00€</span></button>
+    <button class="boton" id="btn-Huevos" onclick="abrirCategoria('Huevos')"><i class="fas fa-egg d"></i><span>Huevos</span><span class="subtotal-tag" id="sub-Huevos">0.00€</span></button>
+</div>
+
+<div class="pantalla" id="p2">
+    <button class="boton" id="btn-Aceite" onclick="abrirCategoria('Aceite')"><i class="fas fa-oil-can d"></i><span>Aceites</span><span class="subtotal-tag" id="sub-Aceite">0.00€</span></button>
+    <button class="boton" id="btn-Conservas" onclick="abrirCategoria('Conservas')"><i class="fas fa-jar d"></i><span>Conservas/Aceitunas</span><span class="subtotal-tag" id="sub-Conservas">0.00€</span></button>
+    <button class="boton" id="btn-Café" onclick="abrirCategoria('Café')"><i class="fas fa-mug-hot d"></i><span>Café/Cacao</span><span class="subtotal-tag" id="sub-Café">0.00€</span></button>
+    <button class="boton" id="btn-Bebidas" onclick="abrirCategoria('Bebidas')"><i class="fas fa-bottle-water l"></i><span>Bebidas</span><span class="subtotal-tag" id="sub-Bebidas">0.00€</span></button>
+    <button class="boton" id="btn-Dulces" onclick="abrirCategoria('Dulces')"><i class="fas fa-cookie c"></i><span>Snacks/Dulces</span><span class="subtotal-tag" id="sub-Dulces">0.00€</span></button>
+    <button class="boton" id="btn-Congelado" onclick="abrirCategoria('Congelado')"><i class="fas fa-snowflake l"></i><span>Congelados</span><span class="subtotal-tag" id="sub-Congelado">0.00€</span></button>
+    <button class="boton" id="btn-Limpieza" onclick="abrirCategoria('Limpieza')"><i class="fas fa-soap h"></i><span>Limpieza</span><span class="subtotal-tag" id="sub-Limpieza">0.00€</span></button>
+    <button class="boton" id="btn-Aseo" onclick="abrirCategoria('Aseo')"><i class="fas fa-pump-soap h"></i><span>Higiene</span><span class="subtotal-tag" id="sub-Aseo">0.00€</span></button>
+    <button class="boton" id="btn-Papel/Varios" onclick="abrirCategoria('Papel/Varios')"><i class="fas fa-toilet-paper h"></i><span>Papel/Varios</span><span class="subtotal-tag" id="sub-Papel/Varios">0.00€</span></button>
+    <button class="boton" id="btn-Mascotas" onclick="abrirCategoria('Mascotas')"><i class="fas fa-dog h"></i><span>Mascotas</span><span class="subtotal-tag" id="sub-Mascotas">0.00€</span></button>
+</div>
+
+<div class="historial" id="hist-list" onclick="abrirModal('modal-historial')"><b>Última Compra:</b> Cargando...</div>
+
+<div class="panel-fijo">
+    <div class="fila-ajuste">
+        <button class="btn-a" style="background:#7f8c8d" onclick="deshacer()" title="Deshacer"><i class="fas fa-rotate-left"></i></button>
+        <button class="btn-a" style="background:var(--rojo)" onclick="sumar('DTO', -1.00, 'Ajuste')">-1€</button>
+        <button class="btn-a" style="background:var(--azul)" onclick="sumar('Ajuste', 0.10, 'Ajuste')">+10c</button>
+        <button class="btn-a" style="background:var(--azul)" onclick="sumar('Ajuste', 0.50, 'Ajuste')">+50c</button>
+        <button class="btn-a" style="background:var(--azul)" onclick="sumar('Ajuste', 1.00, 'Ajuste')">+1€</button>
+        <button class="btn-a" style="background:var(--verde); width: 90px; border-radius: 10px;" onclick="preguntarSupermercadoYGuardar()">PAGAR</button>
+    </div>
+</div>
+
+<!-- Modal Café / Aportaciones Universales -->
+<div class="modal" id="modal-cafe">
+    <div class="modal-contenido" style="text-align:center;">
+        <div class="modal-header">
+            <h3 style="margin:0;">☕ Invítame a un Café</h3>
+            <button class="btn-mini" onclick="cerrarModal('modal-cafe')">✕</button>
+        </div>
+        <p style="font-size:36px; margin:10px 0;">☕😊</p>
+        <p style="font-size:14px; line-height:1.5; color:var(--texto);">
+            <strong>SuperMart</strong> es una aplicación 100% gratuita y libre de anuncios.<br><br>
+            Si te resulta útil para gestionar tus compras diarias, puedes hacer una pequeña aportación. Puedes pagar con <strong>tarjeta normal, Google Pay o PayPal</strong> de forma rápida y segura.
+        </p>
+        
+        <!-- Revolut -->
+        <a href="https://revolut.me/sharifmb" target="_blank" class="btn-mini" style="background:#0075FF; color:white; padding:12px; width:100%; display:block; font-size:14px; font-weight:bold; margin-top:12px; text-decoration:none; border-radius:10px; box-sizing:border-box;">
+            💳 Pagar con Tarjeta o Google Pay (Revolut)
+        </a>
+
+        <!-- PayPal -->
+        <a href="https://paypal.me/sherrif86" target="_blank" class="btn-mini" style="background:#003087; color:white; padding:12px; width:100%; display:block; font-size:14px; font-weight:bold; margin-top:8px; text-decoration:none; border-radius:10px; box-sizing:border-box;">
+            🅿️ Pagar con PayPal
+        </a>
+    </div>
+</div>
+
+<!-- Modal Tutorial de Bienvenida -->
+<div class="modal" id="modal-tutorial">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <h3 style="margin:0;">📖 Cómo usar SuperMart</h3>
+            <button class="btn-mini" onclick="cerrarModal('modal-tutorial')">✕</button>
+        </div>
+        <div style="font-size:14px; line-height:1.6;">
+            <p>1️⃣ <strong>Antes de salir:</strong> Abre la app y entra en cada categoría. Guarda lo que necesitas comprando o apuntando nuevos productos (incluso con 0.00€ para apuntarlo desde casa).</p>
+            <p>2️⃣ <strong>En el súper:</strong> Si un producto tiene 0.00€ o ha cambiado de precio, toca el lápiz (✏️) para poner su valor real antes de añadirlo al carro.</p>
+            <p>3️⃣ <strong>Control de gasto:</strong> El semáforo superior te avisará en verde, amarillo y rojo según te acerques a tu presupuesto.</p>
+            <p>4️⃣ <strong>Al terminar:</strong> Pulsa <b>PAGAR</b> para registrar el supermercado y guardar la lista en tu historial.</p>
+        </div>
+        <button class="btn-mini" style="background:var(--verde); color:white; width:100%; padding:12px; font-weight:bold; margin-top:10px;" onclick="cerrarModal('modal-tutorial')">¡Entendido!</button>
+    </div>
+</div>
+
+<!-- Modal Calculadora -->
+<div class="modal" id="modal-calc">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <h3 style="margin:0;">🧮 Calculadora & Ofertas</h3>
+            <button class="btn-mini" onclick="cerrarModal('modal-calc')">✕</button>
+        </div>
+        <div class="calc-pantalla" id="calc-display">0</div>
+        <div class="calc-grid">
+            <button class="btn-calc" onclick="calcInput('C')">C</button>
+            <button class="btn-calc op" onclick="calcInput('/')">/</button>
+            <button class="btn-calc op" onclick="calcInput('*')">×</button>
+            <button class="btn-calc op" onclick="calcInput('-')">-</button>
+            <button class="btn-calc" onclick="calcInput('7')">7</button>
+            <button class="btn-calc" onclick="calcInput('8')">8</button>
+            <button class="btn-calc" onclick="calcInput('9')">9</button>
+            <button class="btn-calc op" onclick="calcInput('+')">+</button>
+            <button class="btn-calc" onclick="calcInput('4')">4</button>
+            <button class="btn-calc" onclick="calcInput('5')">5</button>
+            <button class="btn-calc" onclick="calcInput('6')">6</button>
+            <button class="btn-calc op" onclick="usarResultadoCalc()">📋 Usar</button>
+            <button class="btn-calc" onclick="calcInput('1')">1</button>
+            <button class="btn-calc" onclick="calcInput('2')">2</button>
+            <button class="btn-calc" onclick="calcInput('3')">3</button>
+            <button class="btn-calc op" onclick="calcInput('.')">.</button>
+            <button class="btn-calc zero" onclick="calcInput('0')">0</button>
+            <button class="btn-calc igual" style="grid-column: span 2;" onclick="calcInput('=')">=</button>
+        </div>
+        <div class="box-oferta">
+            <p style="margin:0 0 6px 0; font-size:12px; font-weight:bold;">⚖️ Calculador de Oferta / Peso:</p>
+            <div style="display:flex; gap:6px; align-items:center; font-size:12px;">
+                <span>Precio:</span><input type="number" id="of-precio" placeholder="€" step="0.01">
+                <span>Gramos:</span><input type="number" id="of-gramos" placeholder="g">
+                <button class="btn-mini" style="background:var(--azul); color:white;" onclick="calcularPrecioKilo()">= /Kg</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Categoria con Selector de Unidades e Integradación de Lápiz y Validación 0.00 -->
+<div class="modal" id="modal-cat">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <h3 style="margin:0;" id="modal-cat-titulo">Categoría</h3>
+            <button class="btn-mini" onclick="cerrarModal('modal-cat')">✕</button>
+        </div>
+        
+        <div class="selector-unidades">
+            <span style="font-weight:bold">Uds:</span>
+            <button class="u-btn active modal-u-btn" onclick="setU(1, this)">1</button>
+            <button class="u-btn modal-u-btn" onclick="setU(2, this)">2</button>
+            <button class="u-btn modal-u-btn" onclick="setU(3, this)">3</button>
+            <button class="u-btn modal-u-btn" onclick="setU(6, this)">6</button>
+            <button class="u-btn modal-u-btn" onclick="setU(12, this)">12</button>
+        </div>
+
+        <p style="margin:8px 0; font-size:13px; font-weight:bold;">⚡ Productos Frecuentes (🏠 Marca si ya está en casa):</p>
+        <div id="lista-frecuentes"></div>
+        <hr style="margin:15px 0; opacity:0.2;">
+        <p style="margin:0 0 8px 0; font-size:13px; font-weight:bold;">📝 Apuntar Producto (Puedes guardar a 0.00€ para lista):</p>
+        <div class="form-nuevo-producto">
+            <div class="inputs-linea">
+                <input type="text" id="nuevo-nombre" placeholder="Nombre (ej. Abrillantador)" style="flex:2;">
+                <input type="number" id="nuevo-precio" placeholder="Precio € (0 si no sabes)" step="0.01" style="flex:1;">
+            </div>
+            <div class="botones-accion-linea">
+                <button class="btn-accion" style="background:var(--azul); color:white;" onclick="guardarNuevoEnLista()"><i class="fas fa-bookmark"></i> Guardar en Lista</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Carro Actual -->
+<div class="modal" id="modal-desglose">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <h3 style="margin:0;">🛒 Productos en el Carro</h3>
+            <button class="btn-mini" onclick="cerrarModal('modal-desglose')">✕</button>
+        </div>
+        <div id="lista-carro"></div>
+    </div>
+</div>
+
+<!-- Modal Historial -->
+<div class="modal" id="modal-historial">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <h3 style="margin:0;">📜 Historial de Compras</h3>
+            <button class="btn-mini" onclick="cerrarModal('modal-historial')">✕</button>
+        </div>
+        <div id="lista-historial-detallado"></div>
+    </div>
+</div>
+
+<!-- Modal Ajustes con Botón de Donación Incorporado -->
+<div class="modal" id="modal-ajustes">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <h3 style="margin:0;">⚙️ Configuración</h3>
+            <button class="btn-mini" onclick="cerrarModal('modal-ajustes')">✕</button>
+        </div>
+        <p><strong>Límite de Presupuesto (€):</strong></p>
+        <input type="number" id="input-limite" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box;" value="150">
+        <button class="btn-mini" style="background: var(--azul); color: white; width: 100%; margin-top: 8px; padding: 10px;" onclick="guardarLimite()">Guardar Límite</button>
+        
+        <div style="background:rgba(0,0,0,0.05); padding:10px; border-radius:8px; margin-top:15px;">
+            <p style="margin:0; font-size:13px;" id="resumen-gasto-mes">📊 Gasto acumulado este mes: <strong>0.00€</strong></p>
+        </div>
+
+        <button class="btn-cafe-ajustes" onclick="cerrarModal('modal-ajustes'); abrirModal('modal-cafe');"><i class="fas fa-mug-hot"></i> ☕ Invítame a un café</button>
+
+        <hr style="margin: 20px 0; opacity: 0.3;">
+        <button class="btn-mini" style="background: var(--azul); color: white; width: 100%; padding: 12px; font-weight:bold; margin-bottom: 25px;" onclick="abrirHistorialDirecto()">📜 Ver Historial de Compras Guardadas</button>
+        
+        <div style="background: rgba(192, 57, 43, 0.1); padding: 10px; border-radius: 10px; border: 1px solid rgba(192, 57, 43, 0.3);">
+            <p style="margin:0 0 6px 0; font-size:11px; color:var(--rojo); font-weight:bold; text-align:center;">⚠️ ZONA DE PELIGRO</p>
+            <button class="btn-mini" style="background: var(--rojo); color: white; width: 100%; padding: 10px;" onclick="vaciarHistorial()">Borrar Historial Completo</button>
+        </div>
+    </div>
+</div>
+
+<!-- Sello oficial con emblema hexagonal MB medbasha -->
+<div class="brand-stamp">
+    <span style="display: inline-flex; align-items: center; justify-content: center; width: 11px; height: 11px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background: currentColor; color: var(--fondo); font-size: 6px; font-weight: bold; line-height: 1;">MB</span>
+    <span>medbasha</span>
+</div>
+
+<script>
+    let db;
+    const dbName = "ControlGastoFamiliaDB";
+
+    function iniciarIndexedDB() {
+        return new Promise((resolve, reject) => {
+            if (navigator.storage && navigator.storage.persist) { navigator.storage.persist(); }
+            const req = indexedDB.open(dbName, 1);
+            req.onupgradeneeded = e => {
+                const database = e.target.result;
+                if (!database.objectStoreNames.contains('app_data')) { database.createObjectStore('app_data'); }
+            };
+            req.onsuccess = e => { db = e.target.result; resolve(db); };
+            req.onerror = e => reject("Error iniciando IndexedDB");
+        });
+    }
+
+    function guardarDatosDB(clave, valor) {
+        localStorage.setItem(clave, typeof valor === 'object' ? JSON.stringify(valor) : valor);
+        if (!db) return;
+        const tx = db.transaction('app_data', 'readwrite');
+        tx.objectStore('app_data').put(valor, clave);
+    }
+
+    function obtenerDatoDB(clave) {
+        return new Promise((resolve) => {
+            if (!db) { resolve(null); return; }
+            const tx = db.transaction('app_data', 'readonly');
+            const req = tx.objectStore('app_data').get(clave);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    const frecuentesBase = {
+        'Fruta': [{nombre: 'Manzanas', precio: 2.20, enCasa: false}, {nombre: 'Plátanos', precio: 1.80, enCasa: false}],
+        'Verdura': [{nombre: 'Tomates', precio: 2.10, enCasa: false}, {nombre: 'Lechuga', precio: 1.00, enCasa: false}],
+        'Carne': [{nombre: 'Pechuga Pollo', precio: 6.50, enCasa: false}, {nombre: 'Carne Picada', precio: 5.00, enCasa: false}],
+        'Limpieza': [{nombre: 'Detergente', precio: 4.50, enCasa: false}, {nombre: 'Fregasuelos', precio: 1.80, enCasa: false}],
+        'Leche': [{nombre: 'Pack Leche 6L', precio: 6.90, enCasa: false}, {nombre: 'Litro Leche', precio: 1.15, enCasa: false}],
+        'Pasta/Arroz': [{nombre: 'Lentejas Bote', precio: 0.90, enCasa: false}, {nombre: 'Garbanzos', precio: 1.10, enCasa: false}],
+        'Conservas': [{nombre: 'Aceitunas Bote', precio: 1.45, enCasa: false}, {nombre: 'Lata Atún', precio: 2.50, enCasa: false}]
+    };
+
+    let habituales = frecuentesBase;
+    let limitePresupuesto = 150;
+    let carroActual = [];
+    let historialCompras = [];
+    let categoriaActiva = '';
+    let uds = 1, fSize = 14;
+    let calcExpr = '';
+
+    if (localStorage.getItem('modo_noche') === 'true') document.body.classList.add('noche');
+
+    function toggleModoNoche() {
+        document.body.classList.toggle('noche');
+        localStorage.setItem('modo_noche', document.body.classList.contains('noche'));
+    }
+
+    function setU(n, btn) {
+        uds = n;
+        document.querySelectorAll('.u-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+    }
+
+    function ajustarLetra(n) {
+        fSize += n;
+        document.documentElement.style.setProperty('--fuente-btn', fSize + 'px');
+    }
+
+    function cambiarTab(n) {
+        document.querySelectorAll('.tab, .pantalla').forEach(el => el.classList.remove('active'));
+        document.getElementById('t' + n).classList.add('active');
+        document.getElementById('p' + n).classList.add('active');
+    }
+
+    function mostrarToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 1800);
+    }
+
+    /* Validación estricta: No permite sumar productos con precio 0.00€ al carro */
+    function sumar(nombre, precio, categoria) {
+        if (!precio || precio <= 0) {
+            alert(`⚠️ El producto "${nombre}" tiene un precio de 0.00€.\n\nToca el botón del lápiz (✏️) para poner su precio real antes de añadirlo al carro.`);
+            return;
+        }
+        const importe = precio * uds;
+        carroActual.push({ id: Date.now(), nombre: nombre, categoria: categoria, precioUnitario: precio, unidades: uds, total: importe });
+        mostrarToast(`✓ ¡${nombre} (${uds}x) añadido!`);
+        uds = 1;
+        resetSelectorUds();
+        actualizar();
+        if(navigator.vibrate) navigator.vibrate(40);
+    }
+
+    function deshacer() {
+        if (carroActual.length > 0) {
+            carroActual.pop();
+            actualizar();
+            if(navigator.vibrate) navigator.vibrate(60);
+        }
+    }
+
+    function eliminarDelCarro(id) {
+        carroActual = carroActual.filter(item => item.id !== id);
+        actualizar();
+        renderDesglose();
+    }
+
+    function resetSelectorUds() {
+        document.querySelectorAll('.u-btn').forEach(b => b.classList.remove('active'));
+        const u1Btns = document.querySelectorAll('.u-btn');
+        if(u1Btns.length > 0) u1Btns[0].classList.add('active');
+    }
+
+    function calcularTotal() { return carroActual.reduce((acc, item) => acc + item.total, 0); }
+
+    function actualizar() {
+        const total = calcularTotal();
+        guardarDatosDB('carro_temp', carroActual);
+
+        document.getElementById('total').innerText = total.toFixed(2) + '€';
+        document.getElementById('status').innerText = `Límite: ${limitePresupuesto.toFixed(2)}€`;
+        
+        const porc = (total / limitePresupuesto) * 100;
+        const barra = document.getElementById('barra-progreso');
+        barra.style.width = Math.min(porc, 100) + "%";
+        barra.style.background = porc > 90 ? "var(--rojo)" : (porc > 70 ? "#f1c40f" : "var(--verde)");
+        
+        const hDiv = document.getElementById('hist-list');
+        if (historialCompras.length > 0) {
+            const ultima = historialCompras[0];
+            hDiv.innerHTML = `<b>🛒 Última compra (${ultima.supermercado || 'Súper'} - ${ultima.fecha}):</b> ${ultima.total.toFixed(2)}€ <i>(Toca para ver la lista)</i>`;
+        } else {
+            hDiv.innerHTML = "<b>Última compra:</b> Sin compras recientes guardadas.";
+        }
+
+        const subtotales = {};
+        carroActual.forEach(item => { subtotales[item.categoria] = (subtotales[item.categoria] || 0) + item.total; });
+        document.querySelectorAll('.subtotal-tag').forEach(tag => {
+            const cat = tag.id.replace('sub-', '');
+            tag.innerText = (subtotales[cat] || 0).toFixed(2) + '€';
+        });
+
+        calcularGastoMensual();
+    }
+
+    function calcularGastoMensual() {
+        const mesActual = new Date().getMonth();
+        const anioActual = new Date().getFullYear();
+        let totalMes = 0;
+        historialCompras.forEach(c => {
+            const partes = c.fecha.split('/');
+            if(partes.length >= 3) {
+                let anio = parseInt(partes[2].length === 2 ? '20' + partes[2] : partes[2]);
+                let mes = parseInt(partes[1]) - 1;
+                if(mes === mesActual && anio === anioActual) totalMes += c.total;
+            }
+        });
+        const el = document.getElementById('resumen-gasto-mes');
+        if(el) el.innerHTML = `📊 Gasto acumulado este mes: <strong>${totalMes.toFixed(2)}€</strong>`;
+    }
+
+    function filtrarProductos() {
+        const txt = document.getElementById('buscador').value.toLowerCase().trim();
+        const sugBox = document.getElementById('sugerencias');
+        sugBox.innerHTML = '';
+
+        if(txt === '') { sugBox.style.display = 'none'; return; }
+
+        let coincidencias = [];
+        for (let cat in habituales) {
+            habituales[cat].forEach(p => {
+                if(p.nombre.toLowerCase().includes(txt)) {
+                    coincidencias.push({ ...p, categoria: cat });
+                }
+            });
+        }
+
+        if(coincidencias.length > 0) {
+            sugBox.style.display = 'block';
+            coincidencias.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'sugerencia-item';
+                div.innerHTML = `<span><strong>${item.nombre}</strong> (${item.categoria})</span><span style="color:var(--verde); font-weight:bold;">${item.precio > 0 ? '+ ' + item.precio.toFixed(2) + '€' : '⚠️ 0.00€'}</span>`;
+                div.onclick = () => {
+                    sumar(item.nombre, item.precio, item.categoria);
+                    document.getElementById('buscador').value = '';
+                    sugBox.style.display = 'none';
+                    abrirCategoria(item.categoria);
+                };
+                sugBox.appendChild(div);
+            });
+        } else {
+            sugBox.style.display = 'block';
+            sugBox.innerHTML = `<div class="sugerencia-item" style="color:gray;">No está en frecuentes. Entra en una categoría para añadirlo.</div>`;
+        }
+    }
+
+    function abrirCategoria(cat) {
+        categoriaActiva = cat;
+        document.getElementById('modal-cat-titulo').innerText = cat;
+        renderFrecuentes();
+        abrirModal('modal-cat');
+    }
+
+    function renderFrecuentes() {
+        const cont = document.getElementById('lista-frecuentes');
+        const lista = habituales[categoriaActiva] || [];
+        if(lista.length === 0) {
+            cont.innerHTML = "<p style='font-size:12px; color:gray;'>No hay productos frecuentes aún.</p>";
+            return;
+        }
+        cont.innerHTML = lista.map((prod, index) => `
+            <div class="item-habitual-card ${prod.enCasa ? 'en-casa' : ''}">
+                <div class="item-habitual-info">
+                    <strong>${prod.nombre} ${prod.enCasa ? '✅ (En casa)' : ''}</strong>
+                    <span class="item-habitual-precio-badge" style="background:${prod.precio > 0 ? 'var(--azul)' : 'var(--rojo)'}">${prod.precio.toFixed(2)}€</span>
+                </div>
+                <div class="item-habitual-acciones">
+                    <button class="btn-mini" style="background:${prod.enCasa ? 'var(--verde)' : 'rgba(0,0,0,0.1)'}; color:${prod.enCasa ? 'white' : 'var(--texto)'}" onclick="toggleEnCasa(${index})" title="Marcar en casa">🏠</button>
+                    <button class="btn-mini" style="background:rgba(0,0,0,0.15); color:var(--texto);" onclick="editarPrecioHabitual(${index})" title="Cambiar precio">✏️</button>
+                    <button class="btn-mini" style="background:var(--verde); color:white; padding:8px 14px;" onclick="sumar('${prod.nombre}', ${prod.precio}, '${categoriaActiva}')">+ Añadir</button>
+                    <button class="btn-mini" style="background:var(--rojo); color:white;" onclick="eliminarHabitual(${index})">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function toggleEnCasa(index) {
+        if(!habituales[categoriaActiva]) return;
+        habituales[categoriaActiva][index].enCasa = !habituales[categoriaActiva][index].enCasa;
+        guardarDatosDB('habituales_v130', habituales);
+        renderFrecuentes();
+    }
+
+    function editarPrecioHabitual(index) {
+        const prod = habituales[categoriaActiva][index];
+        const nuevoPrecioStr = prompt(`Actualizar precio para "${prod.nombre}":`, prod.precio > 0 ? prod.precio.toFixed(2) : '');
+        if (nuevoPrecioStr === null) return;
+        const nuevoPrecio = parseFloat(nuevoPrecioStr.replace(',', '.'));
+        if (isNaN(nuevoPrecio) || nuevoPrecio < 0) {
+            alert("Por favor introduce un precio válido.");
+            return;
+        }
+        prod.precio = nuevoPrecio;
+        guardarDatosDB('habituales_v130', habituales);
+        renderFrecuentes();
+        mostrarToast(`✏️ Precio actualizado a ${nuevoPrecio.toFixed(2)}€`);
+    }
+
+    /* Permite guardar un nuevo producto en la lista incluso con precio 0.00€ para preparar desde casa */
+    function guardarNuevoEnLista() {
+        const inputNombre = document.getElementById('nuevo-nombre');
+        const inputPrecio = document.getElementById('nuevo-precio');
+        const nombre = inputNombre.value.trim();
+        let precio = parseFloat(inputPrecio.value);
+
+        if(!nombre) {
+            alert("Escribe el nombre del producto.");
+            return;
+        }
+
+        if (isNaN(precio) || precio < 0) precio = 0.00;
+
+        if(!habituales[categoriaActiva]) habituales[categoriaActiva] = [];
+        habituales[categoriaActiva].push({ nombre: nombre, precio: precio, enCasa: false });
+        
+        guardarDatosDB('habituales_v130', habituales);
+
+        inputNombre.value = '';
+        inputPrecio.value = '';
+        renderFrecuentes();
+        mostrarToast(precio > 0 ? `📌 ${nombre} guardado en lista` : `📌 ${nombre} apuntado (0.00€)`);
+    }
+
+    function eliminarHabitual(index) {
+        habituales[categoriaActiva].splice(index, 1);
+        guardarDatosDB('habituales_v130', habituales);
+        renderFrecuentes();
+    }
+
+    function calcInput(val) {
+        const disp = document.getElementById('calc-display');
+        if (val === 'C') { calcExpr = ''; disp.innerText = '0'; }
+        else if (val === '=') {
+            try {
+                let res = eval(calcExpr);
+                calcExpr = res.toString();
+                disp.innerText = parseFloat(res).toFixed(2);
+            } catch (e) { disp.innerText = 'Error'; calcExpr = ''; }
+        } else { calcExpr += val; disp.innerText = calcExpr; }
+    }
+
+    function usarResultadoCalc() {
+        const val = parseFloat(document.getElementById('calc-display').innerText);
+        if (!isNaN(val) && val > 0) {
+            document.getElementById('nuevo-precio').value = val;
+            cerrarModal('modal-calc');
+        }
+    }
+
+    function calcularPrecioKilo() {
+        const p = parseFloat(document.getElementById('of-precio').value);
+        const g = parseFloat(document.getElementById('of-gramos').value);
+        if (!isNaN(p) && !isNaN(g) && g > 0) {
+            calcExpr = ((p / g) * 1000).toFixed(2);
+            document.getElementById('calc-display').innerText = calcExpr;
+        }
+    }
+
+    function preguntarSupermercadoYGuardar() {
+        const total = calcularTotal();
+        if(total === 0) return;
+
+        const supermercado = prompt("¿En qué supermercado has comprado?\n(Ej. Mercadona, Carrefour, Lidl, Día, Alcampo...)", "Mercadona");
+        if (supermercado === null) return;
+
+        const fecha = new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
+        
+        historialCompras.unshift({
+            id: Date.now(),
+            fecha: fecha,
+            supermercado: supermercado.trim() || 'Supermercado',
+            total: total,
+            productos: [...carroActual]
+        });
+
+        if(historialCompras.length > 15) historialCompras.pop();
+        
+        guardarDatosDB('compras_detalladas_v150', historialCompras);
+
+        carroActual = [];
+        guardarDatosDB('carro_temp', []);
+
+        actualizar();
+        alert("¡Compra guardada con su desglose! Carro vacío para la siguiente.");
+    }
+
+    function abrirModal(id) {
+        if(id === 'modal-desglose') renderDesglose();
+        if(id === 'modal-historial') renderHistorialDetallado();
+        if(id === 'modal-ajustes') document.getElementById('input-limite').value = limitePresupuesto;
+        document.getElementById(id).classList.add('active');
+    }
+
+    function abrirHistorialDirecto() {
+        cerrarModal('modal-ajustes');
+        abrirModal('modal-historial');
+    }
+
+    function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function renderDesglose() {
+        const cont = document.getElementById('lista-carro');
+        if(carroActual.length === 0) { cont.innerHTML = "<p style='text-align:center;'>El carro está vacío.</p>"; return; }
+        cont.innerHTML = carroActual.map(item => `
+            <div class="item-carro">
+                <div>
+                    <strong>${item.nombre}</strong> <small>(${item.unidades}x ${item.precioUnitario.toFixed(2)}€)</small><br>
+                    <span style="color:var(--azul); font-weight:bold;">${item.total.toFixed(2)}€</span>
+                </div>
+                <button class="btn-mini" style="background:var(--rojo); color:white;" onclick="eliminarDelCarro(${item.id})">🗑️</button>
+            </div>
+        `).join('');
+    }
+
+    function renderHistorialDetallado() {
+        const cont = document.getElementById('lista-historial-detallado');
+        if(historialCompras.length === 0) { cont.innerHTML = "<p style='text-align:center;'>No hay compras guardadas en el historial.</p>"; return; }
+        cont.innerHTML = historialCompras.map((compra, index) => {
+            let textoWp = `🛒 *Compra en ${compra.supermercado || 'Supermercado'}* (${compra.fecha})\n`;
+            compra.productos.forEach(p => { textoWp += `• ${p.nombre} (${p.unidades}x ${p.precioUnitario.toFixed(2)}€) = ${p.total.toFixed(2)}€\n`; });
+            textoWp += `*TOTAL: ${compra.total.toFixed(2)}€*`;
+            let urlWp = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoWp)}`;
+
+            return `
+                <div class="tarjeta-compra-guardada">
+                    <div class="tarjeta-compra-header" onclick="toggleDetalleCompra(${compra.id})">
+                        <span>🛒 ${compra.supermercado || 'Súper'} (${compra.fecha})</span>
+                        <span style="color:var(--azul);">${compra.total.toFixed(2)}€ 🔽</span>
+                    </div>
+                    <div id="det-compra-${compra.id}" class="tarjeta-compra-detalle" style="display:${index === 0 ? 'block' : 'none'};">
+                        ${compra.productos.map(p => `<div style="margin-bottom:6px;">• <strong>${p.nombre}</strong> (${p.unidades}x ${p.precioUnitario.toFixed(2)}€) = <strong>${p.total.toFixed(2)}€</strong></div>`).join('')}
+                        <div style="margin-top:10px; text-align:right;">
+                            <a href="${urlWp}" target="_blank" style="background:#25D366; color:white; padding:6px 12px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:bold; display:inline-block;"><i class="fab fa-whatsapp"></i> Compartir Ticket</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function toggleDetalleCompra(id) {
+        const el = document.getElementById(`det-compra-${id}`);
+        if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function guardarLimite() {
+        const val = parseFloat(document.getElementById('input-limite').value);
+        if(!isNaN(val) && val > 0) {
+            limitePresupuesto = val;
+            guardarDatosDB('limite_v110', limitePresupuesto);
+            actualizar();
+            cerrarModal('modal-ajustes');
+        }
+    }
+
+    function vaciarHistorial() {
+        if(confirm("¿Seguro que quieres borrar todo el historial de compras?")) {
+            historialCompras = [];
+            guardarDatosDB('compras_detalladas_v150', []);
+            actualizar();
+            cerrarModal('modal-ajustes');
+        }
+    }
+
+    async function cargarDatosIniciales() {
+        try {
+            await iniciarIndexedDB();
+            const dbHabituales = await obtenerDatoDB('habituales_v130');
+            const dbLimite = await obtenerDatoDB('limite_v110');
+            const dbCarro = await obtenerDatoDB('carro_temp');
+            const dbHistorial = await obtenerDatoDB('compras_detalladas_v150');
+
+            habituales = dbHabituales || JSON.parse(localStorage.getItem('habituales_v130')) || frecuentesBase;
+            limitePresupuesto = dbLimite || parseFloat(localStorage.getItem('limite_v110')) || 150;
+            carroActual = dbCarro || JSON.parse(localStorage.getItem('carro_temp')) || [];
+            historialCompras = dbHistorial || JSON.parse(localStorage.getItem('compras_detalladas_v150')) || [];
+        } catch (e) {
+            habituales = JSON.parse(localStorage.getItem('habituales_v130')) || frecuentesBase;
+            limitePresupuesto = parseFloat(localStorage.getItem('limite_v110')) || 150;
+            carroActual = JSON.parse(localStorage.getItem('carro_temp')) || [];
+            historialCompras = JSON.parse(localStorage.getItem('compras_detalladas_v150')) || [];
+        }
+
+        if(!localStorage.getItem('tutorial_visto')) {
+            abrirModal('modal-tutorial');
+            localStorage.setItem('tutorial_visto', 'true');
+        }
+
+        actualizar();
+    }
+
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(() => {}); }
+    document.addEventListener('DOMContentLoaded', cargarDatosIniciales);
+</script>
+</body>
+</html>
