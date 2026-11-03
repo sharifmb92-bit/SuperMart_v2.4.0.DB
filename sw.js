@@ -1,60 +1,66 @@
-const CACHE_NAME = 'supermart-v2-9-1';
-const ASSETS = [
+const CACHE_NAME = 'supermart-v3-1-0';
+const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './sw.js',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
 
-// 1. Instalación e intercepción inmediata
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS);
-    })
+// 1. Instalación: Guardar recursos estáticos en caché
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    }).then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// 2. Activación: Elimina la caché v2.4.0 y cualquier versión previa
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => {
+// 2. Activación: Limpiar versiones antiguas del caché de inmediato
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) {
-            console.log('Eliminando caché antigua:', key);
-            return caches.delete(key);
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// 3. Fetch: Estrategia Network-First para archivos HTML/JS (Garantiza siempre la última versión)
-self.addEventListener('fetch', e => {
-  // Ignorar peticiones que no sean GET
-  if (e.request.method !== 'GET') return;
+// 3. Estrategia de peticiones (Fetch)
+self.addEventListener('fetch', (event) => {
+  // Ignorar peticiones externas de Firebase o CDNs externas dinámicas para no interceptar Firestore
+  if (event.request.url.includes('firestore.googleapis.com') || 
+      event.request.url.includes('firebase') || 
+      event.request.method !== 'GET') {
+    return;
+  }
 
-  e.respondWith(
-    fetch(e.request)
-      .then(networkResponse => {
-        // Si hay red, actualiza la caché con la respuesta fresca de GitHub
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(e.request, responseClone);
-          });
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        // Devolver la versión del caché y actualizar en segundo plano (Stale-While-Revalidate)
+        fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
+          }
+        }).catch(() => {/* Modo offline silencioso */});
+        
+        return cachedResponse;
+      }
+
+      // Si no está en caché, intentar obtenerlo de la red
+      return fetch(event.request).catch(() => {
+        // Respuesta de respaldo si la petición navega a una página HTML
+        if (event.request.headers.get('accept').includes('text/html')) {
+          return caches.match('./index.html');
         }
-        return networkResponse;
-      })
-      .catch(() => {
-        // Si no hay red (modo offline), usa la copia en caché
-        return caches.match(e.request);
-      })
+      });
+    })
   );
 });
