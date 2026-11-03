@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SuperMart_v 2.9.1</title>
+    <title>SuperMart_v 3.1.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- PWA -->
@@ -66,7 +66,13 @@
         .modal.active { display: flex; }
         .modal-contenido { background: var(--tarjeta); color: var(--texto); padding: 18px; border-radius: 15px; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 8px; }
-        .item-carro { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.08); }
+        
+        /* Estilos v3.1.0 para productos en el carro */
+        .item-carro { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.08); transition: 0.2s; }
+        .item-carro.completado { background: rgba(39, 174, 96, 0.15); border-left: 4px solid var(--verde); padding-left: 6px; border-radius: 6px; }
+        .item-carro.completado strong { text-decoration: line-through; color: var(--gris); }
+        .btn-check-carro { background: rgba(0,0,0,0.1); border: none; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 15px; margin-right: 8px; font-weight: bold; }
+        .btn-check-carro.activo { background: var(--verde); color: white; }
 
         .item-habitual-card { background: rgba(0,0,0,0.05); padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .item-habitual-card.en-casa { background: rgba(39, 174, 96, 0.18); border: 1px solid var(--verde); }
@@ -366,7 +372,7 @@
     </div>
 </div>
 
-<!-- Modal Ajustes con Selección de Idioma y Sincronización -->
+<!-- Modal Ajustes con Selección de Idioma, Sincronización y Desvinculación -->
 <div class="modal" id="modal-ajustes">
     <div class="modal-contenido">
         <div class="modal-header">
@@ -396,14 +402,15 @@
             <input type="checkbox" class="switch-input" id="switch-pasillos" onchange="toggleModoPasillos(this.checked)">
         </div>
 
-        <!-- SECCIÓN VINCULAR / COPIAR CLAVE DISPOSITIVOS -->
+        <!-- SECCIÓN VINCULAR / COPIAR Y DESVINCULAR MÓVIL -->
         <div style="background:rgba(0,0,0,0.05); padding:10px; border-radius:8px; margin-top:15px;">
             <p style="margin:0 0 6px 0; font-size:13px; font-weight:bold;" data-i18n="sync_title">📱 Sincronización entre Móviles:</p>
             <input type="text" id="clave-uid-display" readonly style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-family:monospace; font-size:12px; margin-bottom:8px; box-sizing:border-box;">
-            <div style="display:flex; gap:6px;">
+            <div style="display:flex; gap:6px; margin-bottom:6px;">
                 <button class="btn-mini" style="flex:1; background:var(--azul); color:white;" onclick="copiarClaveUID()"><i class="fas fa-copy"></i> <span data-i18n="btn_copy_key">Copiar Clave</span></button>
                 <button class="btn-mini" style="flex:1; background:var(--verde); color:white;" onclick="vincularOtraClave()"><i class="fas fa-link"></i> <span data-i18n="btn_link_device">Vincular Móvil</span></button>
             </div>
+            <button class="btn-mini" style="width:100%; background:var(--rojo); color:white; padding:8px;" onclick="desvincularDispositivo()"><i class="fas fa-unlink"></i> <span data-i18n="btn_unlink_device">Desvincular Dispositivo</span></button>
         </div>
 
         <div style="background:rgba(0,0,0,0.05); padding:10px; border-radius:8px; margin-top:12px;">
@@ -431,7 +438,7 @@
 <!-- SDKs Firebase Firestore CDN -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDSO_tEBCS1tX0VzD_RmBJWVXBg0YE8YUY",
@@ -454,7 +461,7 @@
     window.sincronizarCloud = async function(clave, valor) {
         try {
             await setDoc(doc(dbCloud, "usuarios_supermart", userId), {
-                [clave]: JSON.stringify(valor),
+                [clave]: typeof valor === 'object' ? JSON.stringify(valor) : valor,
                 ultimaActualizacion: new Date().toISOString()
             }, { merge: true });
         } catch(e) {
@@ -462,32 +469,66 @@
         }
     };
 
-    window.restaurarNube = async function() {
+    window.restaurarNube = function() {
         try {
             const docRef = doc(dbCloud, "usuarios_supermart", userId);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if(data.habituales_v130) localStorage.setItem('habituales_v130', data.habituales_v130);
-                if(data.compras_detalladas_v150) localStorage.setItem('compras_detalladas_v150', data.compras_detalladas_v150);
-                if(data.limite_v110) localStorage.setItem('limite_v110', data.limite_v110);
-                if(data.modo_pasillos_v270) localStorage.setItem('modo_pasillos_v270', data.modo_pasillos_v270);
-            }
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    let huboCambios = false;
+
+                    if (data.habituales_v130 && data.habituales_v130 !== localStorage.getItem('habituales_v130')) {
+                        localStorage.setItem('habituales_v130', data.habituales_v130);
+                        if (typeof habituales !== 'undefined') habituales = JSON.parse(data.habituales_v130);
+                        huboCambios = true;
+                    }
+                    if (data.carro_temp && data.carro_temp !== localStorage.getItem('carro_temp')) {
+                        localStorage.setItem('carro_temp', data.carro_temp);
+                        if (typeof carroActual !== 'undefined') carroActual = JSON.parse(data.carro_temp);
+                        huboCambios = true;
+                    }
+                    if (data.compras_detalladas_v150 && data.compras_detalladas_v150 !== localStorage.getItem('compras_detalladas_v150')) {
+                        localStorage.setItem('compras_detalladas_v150', data.compras_detalladas_v150);
+                        if (typeof historialCompras !== 'undefined') historialCompras = JSON.parse(data.compras_detalladas_v150);
+                        huboCambios = true;
+                    }
+                    if (data.limite_v110 && data.limite_v110 !== localStorage.getItem('limite_v110')) {
+                        localStorage.setItem('limite_v110', data.limite_v110);
+                        if (typeof limitePresupuesto !== 'undefined') limitePresupuesto = parseFloat(data.limite_v110);
+                        huboCambios = true;
+                    }
+                    if (data.modo_pasillos_v270 && data.modo_pasillos_v270 !== localStorage.getItem('modo_pasillos_v270')) {
+                        localStorage.setItem('modo_pasillos_v270', data.modo_pasillos_v270);
+                        if (typeof modoPasillos !== 'undefined') modoPasillos = (data.modo_pasillos_v270 === 'true');
+                        huboCambios = true;
+                    }
+
+                    if (huboCambios && typeof actualizar === 'function') {
+                        actualizar();
+                        if (typeof categoriaActiva !== 'undefined' && categoriaActiva && typeof renderFrecuentes === 'function') {
+                            renderFrecuentes();
+                        }
+                        const modalDesglose = document.getElementById('modal-desglose');
+                        if (modalDesglose && modalDesglose.classList.contains('active') && typeof renderDesglose === 'function') {
+                            renderDesglose();
+                        }
+                    }
+                }
+            });
         } catch(e) {
-            console.warn("Sin acceso a la nube, cargando sólo almacenamiento local:", e);
+            console.warn("Sin acceso a la escucha en vivo, cargando sólo local:", e);
         }
     };
 </script>
 
 <script>
-    // --- AUTO-LIMPIEZA FORZADA DE CACHÉ VIEJA Y URL (v2.9.1) ---
     (function() {
         if (window.location.hash) {
             history.replaceState(null, null, window.location.pathname + window.location.search);
         }
 
         const VER_KEY = 'supermart_version_instalada';
-        const VERSION_ACTUAL = '2.9.1_clean';
+        const VERSION_ACTUAL = '3.1.0_clean';
 
         if (localStorage.getItem(VER_KEY) !== VERSION_ACTUAL) {
             if ('caches' in window) {
@@ -554,7 +595,7 @@
             settings_title: "⚙️ Configuración", lang_select_label: "🌐 Idioma de la Aplicación:", budget_limit_label: "Límite de Presupuesto (€):",
             btn_save_limit: "Guardar Límite", btn_buy_coffee: "☕ Invítame a un café", btn_view_hist: "📜 Ver Historial de Compras Guardadas",
             danger_zone: "⚠️ ZONA DE PELIGRO", btn_clear_hist: "Borrar Historial Completo", switch_aisles_label: "🛒 Ordenar por Pasillos / Zonas:",
-            sync_title: "📱 Sincronización entre Móviles:", btn_copy_key: "Copiar Clave", btn_link_device: "Vincular Móvil",
+            sync_title: "📱 Sincronización entre Móviles:", btn_copy_key: "Copiar Clave", btn_link_device: "Vincular Móvil", btn_unlink_device: "Desvincular Dispositivo",
             zone_entrance: "Zona 1: Entrada y Frescos", zone_dry: "Zona 2: Pasillos Secos (Despensa)", zone_cold: "Zona 3: Murales de Frío & Carnes", zone_home: "Zona 4: Droguería y Cuidado Personal", zone_checkout: "Zona 5: Salida & Congelados"
         },
         en: {
@@ -578,7 +619,7 @@
             settings_title: "⚙️ Settings", lang_select_label: "🌐 App Language:", budget_limit_label: "Budget Limit (€):",
             btn_save_limit: "Save Limit", btn_buy_coffee: "☕ Buy me a coffee", btn_view_hist: "📜 View Saved History",
             danger_zone: "⚠️ DANGER ZONE", btn_clear_hist: "Clear Complete History", switch_aisles_label: "🛒 Sort by Aisles / Zones:",
-            sync_title: "📱 Device Sync:", btn_copy_key: "Copy Key", btn_link_device: "Link Device",
+            sync_title: "📱 Device Sync:", btn_copy_key: "Copy Key", btn_link_device: "Link Device", btn_unlink_device: "Unlink Device",
             zone_entrance: "Zone 1: Entrance & Fresh", zone_dry: "Zone 2: Dry Aisles", zone_cold: "Zone 3: Cold & Meats", zone_home: "Zone 4: Cleaning & Care", zone_checkout: "Zone 5: Checkout & Frozen"
         },
         fr: {
@@ -592,7 +633,7 @@
             calc_title: "🧮 Calculatrice", calc_use: "📋 Utiliser", offer_title: "⚖️ Calculateur d'offre:", price_label: "Prix:", grams_label: "Grammes:", units_label: "Qté:",
             frequents_sub: "⚡ Produits fréquents:", add_product_sub: "📝 Ajouter produit:", name_ph: "Nom", price_ph: "Prix €", btn_save_list: "Enregistrer",
             cart_title: "🛒 Produits dans le panier", btn_share_cart: "Partager sur WhatsApp", hist_title: "📜 Historique", settings_title: "⚙️ Paramètres",
-            lang_select_label: "🌐 Langue de l'application:", budget_limit_label: "Limite de budget (€):", btn_save_limit: "Enregistrer la limite", btn_buy_coffee: "☕ Offrez-moi un café", btn_view_hist: "📜 Voir l'historique", danger_zone: "⚠️ ZONE DE DANGER", btn_clear_hist: "Effacer l'historique", switch_aisles_label: "🛒 Trier par rayons:", sync_title: "📱 Synchronisation mobile:", btn_copy_key: "Copier clé", btn_link_device: "Lier appareil",
+            lang_select_label: "🌐 Langue de l'application:", budget_limit_label: "Limite de budget (€):", btn_save_limit: "Enregistrer la limite", btn_buy_coffee: "☕ Offrez-moi un café", btn_view_hist: "📜 Voir l'historique", danger_zone: "⚠️ ZONE DE DANGER", btn_clear_hist: "Effacer l'historique", switch_aisles_label: "🛒 Trier par rayons:", sync_title: "📱 Synchronisation mobile:", btn_copy_key: "Copier clé", btn_link_device: "Lier appareil", btn_unlink_device: "Délier appareil",
             zone_entrance: "Zone 1: Entrée & Frais", zone_dry: "Zone 2: Épicerie", zone_cold: "Zone 3: Froid & Viandes", zone_home: "Zone 4: Entretien", zone_checkout: "Zone 5: Caisse & Surgelés"
         },
         it: {
@@ -605,7 +646,7 @@
             calc_title: "🧮 Calcolatrice", calc_use: "📋 Usa", offer_title: "⚖️ Calcolatore Offerta:", price_label: "Prezzo:", grams_label: "Grammi:", units_label: "Qtà:",
             frequents_sub: "⚡ Prodotti Frequenti:", add_product_sub: "📝 Aggiungi Prodotto:", name_ph: "Nome", price_ph: "Prezzo €", btn_save_list: "Salva in Lista",
             cart_title: "🛒 Prodotti nel Carrello", btn_share_cart: "Condividi su WhatsApp", hist_title: "📜 Cronologia", settings_title: "⚙️ Impostazioni",
-            lang_select_label: "🌐 Lingua dell'App:", budget_limit_label: "Limite Budget (€):", btn_save_limit: "Salva Limite", btn_buy_coffee: "☕ Offrimi un caffè", btn_view_hist: "📜 Vedi Cronologia", danger_zone: "⚠️ ZONA PERICOLO", btn_clear_hist: "Cancella Cronologia", switch_aisles_label: "🛒 Ordina per Corsie:", sync_title: "📱 Sincronizzazione:", btn_copy_key: "Copia Chiave", btn_link_device: "Collega Dispositivo",
+            lang_select_label: "🌐 Lingua dell'App:", budget_limit_label: "Limite Budget (€):", btn_save_limit: "Salva Limite", btn_buy_coffee: "☕ Offrimi un caffè", btn_view_hist: "📜 Vedi Cronologia", danger_zone: "⚠️ ZONA PERICOLO", btn_clear_hist: "Cancella Cronologia", switch_aisles_label: "🛒 Ordina per Corsie:", sync_title: "📱 Sincronizzazione:", btn_copy_key: "Copia Chiave", btn_link_device: "Collega Dispositivo", btn_unlink_device: "Scollega Dispositivo",
             zone_entrance: "Zona 1: Ingresso e Freschi", zone_dry: "Zona 2: Corsie Secche", zone_cold: "Zona 3: Freddo e Carne", zone_home: "Zona 4: Pulizia", zone_checkout: "Zona 5: Uscita e Surgelati"
         },
         de: {
@@ -618,7 +659,7 @@
             calc_title: "🧮 Rechner", calc_use: "📋 Nutzen", offer_title: "⚖️ Angebotsrechner:", price_label: "Preis:", grams_label: "Gramm:", units_label: "Menge:",
             frequents_sub: "⚡ Häufige Produkte:", add_product_sub: "📝 Produkt hinzufügen:", name_ph: "Name", price_ph: "Preis €", btn_save_list: "Speichern",
             cart_title: "🛒 Artikel im Warenkorb", btn_share_cart: "Auf WhatsApp teilen", hist_title: "📜 Verlauf", settings_title: "⚙️ Einstellungen",
-            lang_select_label: "🌐 App-Sprache:", budget_limit_label: "Budgetlimit (€):", btn_save_limit: "Limit Speichern", btn_buy_coffee: "☕ Kaufe mir einen Kaffee", btn_view_hist: "📜 Verlauf Anzeigen", danger_zone: "⚠️ GEFAHRENZONE", btn_clear_hist: "Verlauf Löschen", switch_aisles_label: "🛒 Nach Gängen sortieren:", sync_title: "📱 Synchronisation:", btn_copy_key: "Schlüssel kopieren", btn_link_device: "Gerät verknüpfen",
+            lang_select_label: "🌐 App-Sprache:", budget_limit_label: "Budgetlimit (€):", btn_save_limit: "Limit Speichern", btn_buy_coffee: "☕ Kaufe mir einen Kaffee", btn_view_hist: "📜 Verlauf Anzeigen", danger_zone: "⚠️ GEFAHRENZONE", btn_clear_hist: "Verlauf Löschen", switch_aisles_label: "🛒 Nach Gängen sortieren:", sync_title: "📱 Synchronisation:", btn_copy_key: "Schlüssel kopieren", btn_link_device: "Gerät verknüpfen", btn_unlink_device: "Gerät trennen",
             zone_entrance: "Zone 1: Eingang & Frische", zone_dry: "Zone 2: Vorratskammer", zone_cold: "Zone 3: Kühlung & Fleisch", zone_home: "Zone 4: Reinigung", zone_checkout: "Zone 5: Kasse & Tiefkühl"
         },
         pt: {
@@ -631,7 +672,7 @@
             calc_title: "🧮 Calculadora", calc_use: "📋 Usar", offer_title: "⚖️ Calculadora de Oferta:", price_label: "Preço:", grams_label: "Gramas:", units_label: "Qtd:",
             frequents_sub: "⚡ Produtos Frequentes:", add_product_sub: "📝 Adicionar Produto:", name_ph: "Nome", price_ph: "Preço €", btn_save_list: "Guardar na Lista",
             cart_title: "🛒 Produtos no Carrinho", btn_share_cart: "Partilhar no WhatsApp", hist_title: "📜 Histórico", settings_title: "⚙️ Configurações",
-            lang_select_label: "🌐 Idioma da Aplicação:", budget_limit_label: "Limite de Orçamento (€):", btn_save_limit: "Guardar Limite", btn_buy_coffee: "☕ Pague-me um café", btn_view_hist: "📜 Ver Histórico", danger_zone: "⚠️ ZONA DE PERIGO", btn_clear_hist: "Limpar Histórico Completo", switch_aisles_label: "🛒 Ordenar por Corredores:", sync_title: "📱 Sincronização:", btn_copy_key: "Copiar Chave", btn_link_device: "Vincular Dispositivo",
+            lang_select_label: "🌐 Idioma da Aplicação:", budget_limit_label: "Limite de Orçamento (€):", btn_save_limit: "Guardar Limite", btn_buy_coffee: "☕ Pague-me um café", btn_view_hist: "📜 Ver Histórico", danger_zone: "⚠️ ZONA DE PERIGO", btn_clear_hist: "Limpar Histórico Completo", switch_aisles_label: "🛒 Ordenar por Corredores:", sync_title: "📱 Sincronização:", btn_copy_key: "Copiar Chave", btn_link_device: "Vincular Dispositivo", btn_unlink_device: "Desvincular Dispositivo",
             zone_entrance: "Zona 1: Entrada e Frescos", zone_dry: "Zona 2: Corredores Secos", zone_cold: "Zona 3: Frio e Carnes", zone_home: "Zona 4: Limpeza", zone_checkout: "Zona 5: Saída e Congelados"
         },
         ca: {
@@ -644,7 +685,7 @@
             calc_title: "🧮 Calculadora", calc_use: "📋 Usar", offer_title: "⚖️ Calculador d'Oferta:", price_label: "Preu:", grams_label: "Grams:", units_label: "Uts:",
             frequents_sub: "⚡ Productes Freqüents:", add_product_sub: "📝 Apuntar Producte:", name_ph: "Nom", price_ph: "Preu €", btn_save_list: "Guardar a la Llista",
             cart_title: "🛒 Productes a la Cistella", btn_share_cart: "Compartir per WhatsApp", hist_title: "📜 Historial de Compres", settings_title: "⚙️ Configuració",
-            lang_select_label: "🌐 Idioma de l'Aplicació:", budget_limit_label: "Límit de Pressupost (€):", btn_save_limit: "Guardar Límit", btn_buy_coffee: "☕ Convida'm a un cafè", btn_view_hist: "📜 Veure Historial Guardat", danger_zone: "⚠️ ZONA DE PERILL", btn_clear_hist: "Esborrar Historial Complet", switch_aisles_label: "🛒 Ordenar per Passadissos:", sync_title: "📱 Sincronització Dispositius:", btn_copy_key: "Copiar Clau", btn_link_device: "Vincular Mòbil",
+            lang_select_label: "🌐 Idioma de l'Aplicació:", budget_limit_label: "Límit de Pressupost (€):", btn_save_limit: "Guardar Límit", btn_buy_coffee: "☕ Convida'm a un cafè", btn_view_hist: "📜 Veure Historial Guardat", danger_zone: "⚠️ ZONA DE PERILL", btn_clear_hist: "Esborrar Historial Complet", switch_aisles_label: "🛒 Ordenar per Passadissos:", sync_title: "📱 Sincronització Dispositius:", btn_copy_key: "Copiar Clau", btn_link_device: "Vincular Mòbil", btn_unlink_device: "Desvincular Dispositiu",
             zone_entrance: "Zona 1: Entrada i Frescos", zone_dry: "Zona 2: Passadissos Secs", zone_cold: "Zona 3: Murals de Fred i Carna", zone_home: "Zona 4: Neteja", zone_checkout: "Zona 5: Sortida i Congelats"
         }
     };
@@ -793,31 +834,38 @@
         setTimeout(() => { t.style.display = 'none'; }, 1800);
     }
 
+    // --- LÓGICA DE SUMAR ACTUALIZADA: RECALCULA EL PRECIO UNITARIO SI YA ESTÁ EN EL CARRO ---
     function sumar(nombre, precio, categoria) {
-        if (!precio || precio <= 0) {
-            alert(`⚠️ El producto "${nombre}" tiene un precio de 0.00€.\n\nToca el botón del lápiz (✏️) para poner su precio real antes de añadirlo al carro.`);
-            return;
-        }
-
         const existente = carroActual.find(item => item.nombre.toLowerCase() === nombre.toLowerCase());
         if (existente) {
             const numUnidadesSumar = uds;
-            if (!confirm(`⚠️ "${nombre}" ya está en el carro (${existente.unidades}x).\n\n¿Quieres sumar ${numUnidadesSumar} unidad(es) más?`)) {
+            if (!confirm(`⚠️ "${nombre}" ${langKey === 'es' ? 'ya está en el carro' : 'is already in cart'} (${existente.unidades}x).\n\n${langKey === 'es' ? '¿Quieres sumar' : 'Add'} ${numUnidadesSumar} ${langKey === 'es' ? 'unidad(es) más con precio' : 'more unit(s) with price'} ${precio.toFixed(2)}€?`)) {
                 return;
             }
             existente.unidades += numUnidadesSumar;
+            existente.precioUnitario = precio || 0;
             existente.total = existente.unidades * existente.precioUnitario;
             mostrarToast(`✓ ¡Sumado +${numUnidadesSumar} a ${nombre}!`);
         } else {
-            const importe = precio * uds;
-            carroActual.push({ id: Date.now(), nombre: nombre, categoria: categoria, precioUnitario: precio, unidades: uds, total: importe });
-            mostrarToast(`✓ ¡${nombre} (${uds}x) añadido!`);
+            const importe = (precio || 0) * uds;
+            carroActual.push({ id: Date.now(), nombre: nombre, categoria: categoria, precioUnitario: precio || 0, unidades: uds, total: importe, cogido: false });
+            mostrarToast(`✓ ¡${nombre} (${uds}x) ${langKey === 'es' ? 'añadido!' : 'added!'}`);
         }
 
         uds = 1;
         resetSelectorUds();
         actualizar();
         if(navigator.vibrate) navigator.vibrate(40);
+    }
+
+    function toggleCogido(id) {
+        const item = carroActual.find(p => p.id === id);
+        if (item) {
+            item.cogido = !item.cogido;
+            guardarDatosDB('carro_temp', carroActual);
+            renderDesglose();
+            if(navigator.vibrate) navigator.vibrate(30);
+        }
     }
 
     function deshacer() {
@@ -863,11 +911,32 @@
         }
 
         const subtotales = {};
-        carroActual.forEach(item => { subtotales[item.categoria] = (subtotales[item.categoria] || 0) + item.total; });
+        const categoriasConCero = new Set();
+
+        for (let cat in habituales) {
+            if (habituales[cat].some(p => p.precio === 0)) {
+                categoriasConCero.add(cat);
+            }
+        }
+
+        carroActual.forEach(item => {
+            if (item.precioUnitario === 0 || item.total === 0) {
+                categoriasConCero.add(item.categoria);
+            }
+            subtotales[item.categoria] = (subtotales[item.categoria] || 0) + item.total;
+        });
         
         document.querySelectorAll('.subtotal-tag').forEach(tag => {
             const cat = tag.id.replace('sub-', '').replace('subp-', '');
-            tag.innerText = (subtotales[cat] || 0).toFixed(2) + '€';
+            if (categoriasConCero.has(cat)) {
+                tag.innerText = '⚠️ 0.00€';
+                tag.style.color = 'var(--rojo)';
+                tag.style.background = 'rgba(192, 57, 43, 0.25)';
+            } else {
+                tag.innerText = (subtotales[cat] || 0).toFixed(2) + '€';
+                tag.style.color = 'var(--azul)';
+                tag.style.background = 'rgba(255, 255, 255, 0.7)';
+            }
         });
 
         calcularGastoMensual();
@@ -912,9 +981,8 @@
             coincidenciasDirectas.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'sugerencia-item';
-                div.innerHTML = `<span><strong>${item.nombre}</strong> (${item.categoria})</span><span style="color:var(--verde); font-weight:bold;">${item.precio > 0 ? '+ ' + item.precio.toFixed(2) + '€' : '⚠️ 0.00€'}</span>`;
+                div.innerHTML = `<span><strong>${item.nombre}</strong> (${item.categoria})</span><span style="color:var(--azul); font-weight:bold;">📂 ${langKey === 'es' ? 'Ver en categoría' : 'View in category'}</span>`;
                 div.onclick = () => {
-                    sumar(item.nombre, item.precio, item.categoria);
                     document.getElementById('buscador').value = '';
                     sugBox.style.display = 'none';
                     abrirCategoria(item.categoria);
@@ -937,7 +1005,7 @@
             divSmart.className = 'sugerencia-item';
             divSmart.style.background = 'rgba(44, 94, 138, 0.08)';
             divSmart.style.borderLeft = '4px solid var(--azul)';
-            divSmart.innerHTML = `<span>🔎 <strong>${rawTxt.trim()}</strong> → ${langKey === 'es' ? 'Abrir categoría' : 'Open category'} <strong>${categoriaSugerida}</strong></span><span style="color:var(--azul); font-weight:bold;">📂 Abrir</span>`;
+            divSmart.innerHTML = `<span>🔎 <strong>${rawTxt.trim()}</strong> → ${langKey === 'es' ? 'Abrir categoría' : 'Open category'} <strong>${categoriaSugerida}</strong></span><span style="color:var(--azul); font-weight:bold;">📂 ${langKey === 'es' ? 'Abrir' : 'Open'}</span>`;
             divSmart.onclick = () => {
                 const nombreIngresado = rawTxt.trim();
                 document.getElementById('buscador').value = '';
@@ -977,7 +1045,7 @@
             <div class="item-habitual-card ${prod.enCasa ? 'en-casa' : ''}">
                 <div class="item-habitual-info">
                     <strong>${prod.nombre} ${prod.enCasa ? (langKey === 'es' ? '✅ (En casa)' : '✅ (At home)') : ''}</strong>
-                    <span class="item-habitual-precio-badge" style="background:${prod.precio > 0 ? 'var(--azul)' : 'var(--rojo)'}">${prod.precio.toFixed(2)}€</span>
+                    <span class="item-habitual-precio-badge" style="background:${prod.precio > 0 ? 'var(--azul)' : 'var(--rojo)'}">${prod.precio > 0 ? prod.precio.toFixed(2) + '€' : '⚠️ 0.00€'}</span>
                 </div>
                 <div class="item-habitual-acciones">
                     <button class="btn-mini" style="background:${prod.enCasa ? 'var(--verde)' : 'rgba(0,0,0,0.1)'}; color:${prod.enCasa ? 'white' : 'var(--texto)'}" onclick="toggleEnCasa(${index})" title="Marcar en casa">🏠</button>
@@ -996,8 +1064,10 @@
         renderFrecuentes();
     }
 
+    // --- EDICIÓN EN FRECUENTES CON RECALCULO AUTOMÁTICO DEL CARRO ---
     function editarNombreYPrecioHabitual(index) {
         const prod = habituales[categoriaActiva][index];
+        const nombreAnterior = prod.nombre;
         const nuevoNombre = prompt(`${langKey === 'es' ? 'Corregir nombre del producto' : 'Edit product name'}:`, prod.nombre);
         if (nuevoNombre === null || nuevoNombre.trim() === '') return;
 
@@ -1013,7 +1083,18 @@
         prod.nombre = nuevoNombre.trim();
         prod.precio = nuevoPrecio;
         guardarDatosDB('habituales_v130', habituales);
+
+        // Actualizar automáticamente si ya existe dentro del carro activo
+        const enCarro = carroActual.find(item => item.nombre.toLowerCase() === nombreAnterior.toLowerCase());
+        if (enCarro) {
+            enCarro.nombre = prod.nombre;
+            enCarro.precioUnitario = prod.precio;
+            enCarro.total = enCarro.unidades * enCarro.precioUnitario;
+            guardarDatosDB('carro_temp', carroActual);
+        }
+
         renderFrecuentes();
+        actualizar();
         mostrarToast(`✏️ ${langKey === 'es' ? 'Actualizado:' : 'Updated:'} ${prod.nombre} (${nuevoPrecio.toFixed(2)}€)`);
     }
 
@@ -1038,6 +1119,7 @@
         inputNombre.value = '';
         inputPrecio.value = '';
         renderFrecuentes();
+        actualizar();
         mostrarToast(precio > 0 ? `📌 ${nombre} ${langKey === 'es' ? 'guardado en lista' : 'saved to list'}` : `📌 ${nombre} ${langKey === 'es' ? 'apuntado (0.00€)' : 'added (0.00€)'}`);
     }
 
@@ -1045,6 +1127,7 @@
         habituales[categoriaActiva].splice(index, 1);
         guardarDatosDB('habituales_v130', habituales);
         renderFrecuentes();
+        actualizar();
     }
 
     function calcInput(val) {
@@ -1138,15 +1221,36 @@
     function renderDesglose() {
         const cont = document.getElementById('lista-carro');
         if(carroActual.length === 0) { cont.innerHTML = `<p style='text-align:center;'>${langKey === 'es' ? 'El carro está vacío.' : 'Cart is empty.'}</p>`; return; }
-        cont.innerHTML = carroActual.map(item => `
-            <div class="item-carro">
-                <div>
-                    <strong>${item.nombre}</strong> <small>(${item.unidades}x ${item.precioUnitario.toFixed(2)}€)</small><br>
-                    <span style="color:var(--azul); font-weight:bold;">${item.total.toFixed(2)}€</span>
+        
+        const totalItems = carroActual.length;
+        const cogidosCount = carroActual.filter(i => i.cogido).length;
+
+        let htmlResumen = `
+            <div style="background:rgba(0,0,0,0.05); padding:8px 12px; border-radius:8px; margin-bottom:12px; font-size:13px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+                <span>📋 ${langKey === 'es' ? 'Listos:' : 'Ready:'} ${cogidosCount} ${langKey === 'es' ? 'de' : 'of'} ${totalItems}</span>
+                <span style="color:${cogidosCount === totalItems ? 'var(--verde)' : 'var(--azul)'}">${cogidosCount === totalItems ? (langKey === 'es' ? '✅ ¡Compra completa!' : '✅ Shopping complete!') : (langKey === 'es' ? '⏳ Pendientes: ' : '⏳ Pending: ') + (totalItems - cogidosCount)}</span>
+            </div>
+        `;
+
+        cont.innerHTML = htmlResumen + carroActual.map(item => `
+            <div class="item-carro ${item.cogido ? 'completado' : ''}">
+                <div style="display:flex; align-items:center; flex:1; cursor:pointer;" onclick="irACategoriaDesdeCarro('${item.categoria}')">
+                    <button class="btn-check-carro ${item.cogido ? 'activo' : ''}" onclick="event.stopPropagation(); toggleCogido(${item.id});" title="Marcar como metido en el carro">
+                        ${item.cogido ? '✓' : '◯'}
+                    </button>
+                    <div>
+                        <strong>${item.nombre}</strong> <small>(${item.unidades}x ${item.precioUnitario > 0 ? item.precioUnitario.toFixed(2) + '€' : '⚠️ 0.00€'})</small><br>
+                        <span style="color:var(--azul); font-weight:bold;">${item.total.toFixed(2)}€</span>
+                    </div>
                 </div>
                 <button class="btn-mini" style="background:var(--rojo); color:white;" onclick="eliminarDelCarro(${item.id})">🗑️</button>
             </div>
         `).join('');
+    }
+
+    function irACategoriaDesdeCarro(categoria) {
+        cerrarModal('modal-desglose');
+        abrirCategoria(categoria);
     }
 
     function renderHistorialDetallado() {
@@ -1232,9 +1336,18 @@
         }
     }
 
+    // --- FUNCIÓN DE DESVINCULACIÓN INTEGRADA ---
+    function desvincularDispositivo() {
+        if(confirm(langKey === 'es' ? "¿Quieres desvincular este dispositivo?\nSe generará una clave UID totalmente nueva e independiente." : "Unlink this device?\nA completely new independent UID key will be generated.")) {
+            localStorage.removeItem('supermart_uid');
+            alert("🔄 Dispositivo desvinculado. Reiniciando app para generar un nuevo código único...");
+            location.reload();
+        }
+    }
+
     async function cargarDatosIniciales() {
         aplicarTraducciones();
-        if(window.restaurarNube) { await window.restaurarNube(); }
+        if(window.restaurarNube) { window.restaurarNube(); }
         try {
             await iniciarIndexedDB();
             const dbHabituales = await obtenerDatoDB('habituales_v130');
