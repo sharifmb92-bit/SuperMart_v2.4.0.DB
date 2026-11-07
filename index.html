@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SuperMart_v 3.1.0</title>
+    <title>SuperMart_v 3.2.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- PWA -->
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#6F4E37">
     <link rel="apple-touch-icon" href="./icon-192.png">
+
+    <!-- CDN Oficial Tesseract.js para Escáner OCR de Tickets -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
         :root { 
@@ -30,7 +33,10 @@
         .sugerencias-busqueda { background: #fff; color: #333; border-radius: 10px; margin-top: 4px; max-height: 220px; overflow-y: auto; position: absolute; width: 100%; z-index: 150; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; }
         .sugerencia-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 15px; cursor: pointer; }
 
-        #toast { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--verde); color: white; padding: 12px 20px; border-radius: 25px; font-weight: bold; font-size: 15px; z-index: 400; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        /* Toast con colores dinámicos */
+        #toast { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--verde); color: white; padding: 12px 20px; border-radius: 25px; font-weight: bold; font-size: 15px; z-index: 400; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: background 0.3s; }
+        #toast.toast-info { background: var(--azul); }
+        #toast.toast-exito { background: var(--verde); }
 
         .total-info { display: flex; justify-content: space-between; align-items: center; }
         #total { font-size: 28px; font-weight: bold; }
@@ -62,12 +68,14 @@
         .fila-ajuste { display: flex; justify-content: space-around; align-items: center; max-width: 1200px; margin: 0 auto; }
         .btn-a { width: 50px; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
+        .btn-escaner-flotante { position: fixed; bottom: 85px; right: 18px; z-index: 250; background: #d35400; color: white; width: 58px; height: 58px; border-radius: 29px; border: 2px solid #f39c12; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .btn-escaner-flotante:active { transform: scale(0.92); }
+
         .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 300; align-items: center; justify-content: center; padding: 15px; }
         .modal.active { display: flex; }
         .modal-contenido { background: var(--tarjeta); color: var(--texto); padding: 18px; border-radius: 15px; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; box-sizing: border-box; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 8px; }
         
-        /* Estilos v3.1.0 para productos en el carro */
         .item-carro { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.08); transition: 0.2s; }
         .item-carro.completado { background: rgba(39, 174, 96, 0.15); border-left: 4px solid var(--verde); padding-left: 6px; border-radius: 6px; }
         .item-carro.completado strong { text-decoration: line-through; color: var(--gris); }
@@ -114,7 +122,7 @@
 
         .f { color: #D35400; } .c { color: #A93226; } .l { color: #2E86C1; } .h { color: #512E5F; } .d { color: #795548; }
 
-        .brand-stamp { position: absolute; bottom: 5px; right: 8px; font-size: 9px; opacity: 0.3; color: var(--texto); pointer-events: none; user-select: none; display: flex; align-items: center; gap: 4px; }
+        .brand-stamp { position: absolute; bottom: 5px; right: 8px; font-size: 9px; opacity: 0.35; color: var(--texto); pointer-events: none; user-select: none; display: flex; align-items: center; gap: 4px; z-index: 10; }
 
         @media (min-width: 768px) {
             .header, .historial, .pantalla { max-width: 1000px; margin-left: auto; margin-right: auto; }
@@ -224,6 +232,10 @@
 
 <div class="historial" id="hist-list" onclick="abrirModal('modal-historial')"><b>Última Compra:</b> Cargando...</div>
 
+<button class="btn-escaner-flotante" onclick="abrirModalEscaner()" title="Escanear Ticket de Compra">
+    🧾
+</button>
+
 <div class="panel-fijo">
     <div class="fila-ajuste">
         <button class="btn-a" style="background:#7f8c8d" onclick="deshacer()" title="Deshacer"><i class="fas fa-rotate-left"></i></button>
@@ -232,6 +244,60 @@
         <button class="btn-a" style="background:var(--azul)" onclick="sumar('Ajuste', 0.50, 'Ajuste')">+50c</button>
         <button class="btn-a" style="background:var(--azul)" onclick="sumar('Ajuste', 1.00, 'Ajuste')">+1€</button>
         <button class="btn-a" style="background:var(--verde); width: 90px; border-radius: 10px;" onclick="preguntarSupermercadoYGuardar()" data-i18n="btn_pay">PAGAR</button>
+    </div>
+</div>
+
+<!-- Modal Escáner -->
+<div class="modal" id="modal-escaner">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <h3 style="margin:0; display:flex; align-items:center; gap:8px;">
+                <span>🧾</span> <span data-i18n="scanner_title">Escáner de Tickets de Compra</span>
+            </h3>
+            <button class="btn-mini" onclick="cerrarModalEscaner()">✕</button>
+        </div>
+
+        <p style="font-size:12px; color:var(--texto); opacity:0.8; margin-bottom:12px;" data-i18n="scanner_sub">
+            Escanea tu recibo de papel tras comprar. Si el ticket es largo, puedes fotografiarlo por tramos con el botón de añadir fotos.
+        </p>
+
+        <div id="zona-captura-ticket" onclick="document.getElementById('input-foto-ticket').click()" style="border:2px dashed var(--azul); border-radius:12px; padding:15px; text-align:center; background:rgba(44, 94, 138, 0.08); cursor:pointer; margin-bottom:12px;">
+            <input type="file" id="input-foto-ticket" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoTicket(event)">
+            
+            <div id="vista-previa-contenedor" style="display:none; margin-bottom:10px;">
+                <img id="img-vista-previa" src="" alt="Vista previa" style="max-height:180px; margin:0 auto; border-radius:8px; border:1px solid #ccc; display:block;">
+            </div>
+
+            <div id="instrucciones-subida">
+                <i class="fas fa-camera" style="font-size:32px; color:var(--azul); margin-bottom:8px;"></i>
+                <p style="font-size:13px; font-weight:bold; margin:0; color:var(--texto);" id="texto-boton-captura" data-i18n="btn_photo_ticket">Toca para fotografiar ticket</p>
+                <small style="font-size:11px; color:gray;" data-i18n="photo_tip">Acerca la cámara para asegurar lectura nítida</small>
+            </div>
+        </div>
+
+        <div id="loader-escaner" style="display:none; text-align:center; padding:12px; background:rgba(0,0,0,0.05); border-radius:10px; margin-bottom:12px;">
+            <i class="fas fa-spinner fa-spin" style="font-size:24px; color:var(--azul); margin-bottom:6px;"></i>
+            <p style="font-size:13px; font-weight:bold; margin:0;" id="texto-progreso-ocr">Analizando ticket...</p>
+            <small style="font-size:11px; color:gray;" data-i18n="ocr_local_tip">Procesando localmente en tu móvil</small>
+        </div>
+
+        <div id="contenedor-resultados-ticket" style="display:none; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <strong style="font-size:12px; color:var(--texto);" data-i18n="acc_items_title">Productos Acumulados:</strong>
+                <span id="total-detectados" style="font-size:12px; font-weight:bold; color:var(--azul);">0 encontrados</span>
+            </div>
+            
+            <div id="lista-items-detectados" style="max-height:160px; overflow-y:auto; font-size:12px; border:1px solid rgba(0,0,0,0.1); border-radius:8px; padding:6px; background:rgba(255,255,255,0.4);"></div>
+
+            <button onclick="document.getElementById('input-foto-ticket').click()" class="btn-mini" style="width:100%; margin-top:8px; background:rgba(0,0,0,0.08); color:var(--texto); padding:8px; font-size:12px; border:1px solid rgba(0,0,0,0.15);" data-i18n="btn_add_more_photos">
+                📸 Añadir otro tramo del ticket
+            </button>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn-mini" style="flex:1; padding:10px; background:var(--gris); color:white;" onclick="cerrarModalEscaner()" data-i18n="btn_cancel">Cancelar</button>
+            <button id="btn-guardar-ticket" class="btn-mini" style="flex:1; padding:10px; background:var(--verde); color:white;" onclick="confirmarImportacionTicket()" disabled data-i18n="btn_import_app">¡Importar A la App!</button>
+        </div>
     </div>
 </div>
 
@@ -262,14 +328,15 @@
 <div class="modal" id="modal-tutorial">
     <div class="modal-contenido">
         <div class="modal-header">
-            <h3 style="margin:0;" data-i18n="tut_title">📖 Cómo usar SuperMart</h3>
+            <h3 style="margin:0;" data-i18n="tut_title">📖 Cómo usar SuperMart v3.2.0</h3>
             <button class="btn-mini" onclick="cerrarModal('modal-tutorial')">✕</button>
         </div>
-        <div style="font-size:14px; line-height:1.6;">
+        <div style="font-size:13px; line-height:1.6;">
             <p>1️⃣ <strong data-i18n="tut_step1_b">Antes de salir:</strong> <span data-i18n="tut_step1">Abre la app y entra en cada categoría. Guarda lo que necesitas comprando o apuntando nuevos productos (incluso con 0.00€ para apuntarlo desde casa).</span></p>
             <p>2️⃣ <strong data-i18n="tut_step2_b">En el súper:</strong> <span data-i18n="tut_step2">Si un producto tiene 0.00€ o ha cambiado de precio, toca el lápiz (✏️) para poner su valor real antes de añadirlo al carro.</span></p>
-            <p>3️⃣ <strong data-i18n="tut_step3_b">Control de gasto:</strong> <span data-i18n="tut_step3">El semáforo superior te avisará en verde, amarillo y rojo según te acerques a tu presupuesto.</span></p>
-            <p>4️⃣ <strong data-i18n="tut_step4_b">Al terminar:</strong> <span data-i18n="tut_step4">Pulsa <b>PAGAR</b> para registrar el supermercado y guardar la lista en tu historial.</span></p>
+            <p>3️⃣ <strong data-i18n="tut_step3_scan_b">🧾 Novedad Escáner:</strong> <span data-i18n="tut_step3_scan">Usa el botón flotante 🧾 para fotografiar tu recibo de papel tras comprar. Los precios y productos se colocarán en sus tarjetas solas.</span></p>
+            <p>4️⃣ <strong data-i18n="tut_step3_b">Control de gasto:</strong> <span data-i18n="tut_step3">El semáforo superior te avisará en verde, amarillo y rojo según te acerques a tu presupuesto.</span></p>
+            <p>5️⃣ <strong data-i18n="tut_step4_b">Al terminar:</strong> <span data-i18n="tut_step4">Pulsa <b>PAGAR</b> para registrar el supermercado y guardar la lista en tu historial.</span></p>
         </div>
         <button class="btn-mini" style="background:var(--verde); color:white; width:100%; padding:12px; font-weight:bold; margin-top:10px;" onclick="cerrarModal('modal-tutorial')" data-i18n="btn_understood">¡Entendido!</button>
     </div>
@@ -372,7 +439,7 @@
     </div>
 </div>
 
-<!-- Modal Ajustes con Selección de Idioma, Sincronización y Desvinculación -->
+<!-- Modal Ajustes -->
 <div class="modal" id="modal-ajustes">
     <div class="modal-contenido">
         <div class="modal-header">
@@ -380,7 +447,6 @@
             <button class="btn-mini" onclick="cerrarModal('modal-ajustes')">✕</button>
         </div>
 
-        <!-- SELECTOR MULTI-IDIOMA -->
         <p style="margin:10px 0 4px 0;"><strong data-i18n="lang_select_label">🌐 Idioma de la Aplicación:</strong></p>
         <select id="selector-idioma" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size:14px; font-weight:bold; background:white; color:#333;" onchange="cambiarIdiomaManual(this.value)">
             <option value="es">Español (ES)</option>
@@ -396,13 +462,11 @@
         <input type="number" id="input-limite" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box;" value="150">
         <button class="btn-mini" style="background: var(--azul); color: white; width: 100%; margin-top: 8px; padding: 10px;" onclick="guardarLimite()" data-i18n="btn_save_limit">Guardar Límite</button>
         
-        <!-- SWITCH: MODO PASILLOS -->
         <div class="opcion-switch-caja">
             <span class="switch-lbl" data-i18n="switch_aisles_label">🛒 Ordenar por Pasillos / Zonas:</span>
             <input type="checkbox" class="switch-input" id="switch-pasillos" onchange="toggleModoPasillos(this.checked)">
         </div>
 
-        <!-- SECCIÓN VINCULAR / COPIAR Y DESVINCULAR MÓVIL -->
         <div style="background:rgba(0,0,0,0.05); padding:10px; border-radius:8px; margin-top:15px;">
             <p style="margin:0 0 6px 0; font-size:13px; font-weight:bold;" data-i18n="sync_title">📱 Sincronización entre Móviles:</p>
             <input type="text" id="clave-uid-display" readonly style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-family:monospace; font-size:12px; margin-bottom:8px; box-sizing:border-box;">
@@ -429,9 +493,9 @@
     </div>
 </div>
 
-<!-- Sello oficial con emblema hexagonal MB medbasha -->
+<!-- Sello oficial con emblema hexagonal MB medbasha en minúsculas y disimulado -->
 <div class="brand-stamp">
-    <span style="display: inline-flex; align-items: center; justify-content: center; width: 11px; height: 11px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background: currentColor; color: var(--fondo); font-size: 6px; font-weight: bold; line-height: 1;">MB</span>
+    <span style="display: inline-flex; align-items: center; justify-content: center; width: 11px; height: 11px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background: currentColor; color: var(--fondo); font-size: 6px; font-weight: bold; line-height: 1;">mb</span>
     <span>medbasha</span>
 </div>
 
@@ -458,13 +522,19 @@
         localStorage.setItem('supermart_uid', userId);
     }
 
+    // Bandera para evitar bucle entre la app local y el servidor en tiempo real
+    let esActualizacionLocal = false;
+
     window.sincronizarCloud = async function(clave, valor) {
         try {
+            esActualizacionLocal = true;
             await setDoc(doc(dbCloud, "usuarios_supermart", userId), {
                 [clave]: typeof valor === 'object' ? JSON.stringify(valor) : valor,
                 ultimaActualizacion: new Date().toISOString()
             }, { merge: true });
+            setTimeout(() => { esActualizacionLocal = false; }, 800);
         } catch(e) {
+            esActualizacionLocal = false;
             console.warn("Fallo sincronización nube (modo offline activo):", e);
         }
     };
@@ -473,6 +543,8 @@
         try {
             const docRef = doc(dbCloud, "usuarios_supermart", userId);
             onSnapshot(docRef, (docSnap) => {
+                if (esActualizacionLocal) return; // Si el cambio viene de este dispositivo, ignorar rebote
+
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     let huboCambios = false;
@@ -528,7 +600,7 @@
         }
 
         const VER_KEY = 'supermart_version_instalada';
-        const VERSION_ACTUAL = '3.1.0_clean';
+        const VERSION_ACTUAL = '3.2.0_clean';
 
         if (localStorage.getItem(VER_KEY) !== VERSION_ACTUAL) {
             if ('caches' in window) {
@@ -582,9 +654,10 @@
             btn_pay: "PAGAR", cafe_title: "☕ Invítame a un Café",
             cafe_desc: "<strong>SuperMart</strong> es una aplicación 100% gratuita y libre de anuncios.<br><br>Si te resulta útil para gestionar tus compras diarias, puedes hacer una pequeña aportación. Puedes pagar con <strong>tarjeta normal, Google Pay o PayPal</strong> de forma rápida y segura.",
             pay_revolut: "💳 Pagar con Tarjeta o Google Pay (Revolut)", pay_paypal: "🅿️ Pagar con PayPal",
-            tut_title: "📖 Cómo usar SuperMart",
+            tut_title: "📖 Cómo usar SuperMart v3.2.0",
             tut_step1_b: "Antes de salir:", tut_step1: "Abre la app y entra en cada categoría. Guarda lo que necesitas comprando o apuntando nuevos productos (incluso con 0.00€ para apuntarlo desde casa).",
             tut_step2_b: "En el súper:", tut_step2: "Si un producto tiene 0.00€ o ha cambiado de precio, toca el lápiz (✏️) para poner su valor real antes de añadirlo al carro.",
+            tut_step3_scan_b: "🧾 Novedad Escáner:", tut_step3_scan: "Usa el botón flotante 🧾 para fotografiar tu recibo de papel tras comprar. Los precios y productos se colocarán en sus tarjetas solas.",
             tut_step3_b: "Control de gasto:", tut_step3: "El semáforo superior te avisará en verde, amarillo y rojo según te acerques a tu presupuesto.",
             tut_step4_b: "Al terminar:", tut_step4: "Pulsa <b>PAGAR</b> para registrar el supermercado y guardar la lista en tu historial.",
             btn_understood: "¡Entendido!", calc_title: "🧮 Calculadora & Ofertas", calc_use: "📋 Usar",
@@ -596,7 +669,10 @@
             btn_save_limit: "Guardar Límite", btn_buy_coffee: "☕ Invítame a un café", btn_view_hist: "📜 Ver Historial de Compras Guardadas",
             danger_zone: "⚠️ ZONA DE PELIGRO", btn_clear_hist: "Borrar Historial Completo", switch_aisles_label: "🛒 Ordenar por Pasillos / Zonas:",
             sync_title: "📱 Sincronización entre Móviles:", btn_copy_key: "Copiar Clave", btn_link_device: "Vincular Móvil", btn_unlink_device: "Desvincular Dispositivo",
-            zone_entrance: "Zona 1: Entrada y Frescos", zone_dry: "Zona 2: Pasillos Secos (Despensa)", zone_cold: "Zona 3: Murales de Frío & Carnes", zone_home: "Zona 4: Droguería y Cuidado Personal", zone_checkout: "Zona 5: Salida & Congelados"
+            zone_entrance: "Zona 1: Entrada y Frescos", zone_dry: "Zona 2: Pasillos Secos (Despensa)", zone_cold: "Zona 3: Murales de Frío & Carnes", zone_home: "Zona 4: Droguería y Cuidado Personal", zone_checkout: "Zona 5: Salida & Congelados",
+            scanner_title: "Escáner de Tickets de Compra", scanner_sub: "Escanea tu recibo de papel tras comprar. Si el ticket es largo, puedes fotografiarlo por tramos con el botón de añadir fotos.",
+            btn_photo_ticket: "Toca para fotografiar ticket", photo_tip: "Acerca la cámara para asegurar lectura nítida", ocr_local_tip: "Procesando localmente en tu móvil",
+            acc_items_title: "Productos Acumulados:", btn_add_more_photos: "📸 Añadir otro tramo del ticket", btn_cancel: "Cancelar", btn_import_app: "¡Importar A la App!"
         },
         en: {
             btn_cart: "Cart", search_ph: "🔍 Type product (e.g. butter, tomato)...", app_heading: "Family Expenses",
@@ -606,9 +682,10 @@
             btn_pay: "CHECKOUT", cafe_title: "☕ Buy me a Coffee",
             cafe_desc: "<strong>SuperMart</strong> is 100% free with no ads.<br><br>Support the app with card, Google Pay or PayPal.",
             pay_revolut: "💳 Pay with Card or Google Pay (Revolut)", pay_paypal: "🅿️ Pay with PayPal",
-            tut_title: "📖 How to use SuperMart",
-            tut_step1_b: "Before shopping:", tut_step1: "Add items to your cart at home even at €0.00.",
-            tut_step2_b: "At the store:", tut_step2: "Tap pencil (✏️) to set prices before adding.",
+            tut_title: "📖 How to use SuperMart v3.2.0",
+            tut_step1_b: "Before shopping:", tut_step1: "Open the app and check each category. Add items to your list at home even at €0.00.",
+            tut_step2_b: "At the store:", tut_step2: "Tap the pencil (✏️) to set exact prices before adding items to your cart.",
+            tut_step3_scan_b: "🧾 New Receipt Scanner:", tut_step3_scan: "Use the floating button 🧾 to photograph your paper receipt after shopping. Prices and items will automatically update in your cards.",
             tut_step3_b: "Budget control:", tut_step3: "Top bar changes color as you spend.",
             tut_step4_b: "At checkout:", tut_step4: "Tap <b>CHECKOUT</b> to save receipt.",
             btn_understood: "Got it!", calc_title: "🧮 Calculator", calc_use: "📋 Use",
@@ -620,7 +697,10 @@
             btn_save_limit: "Save Limit", btn_buy_coffee: "☕ Buy me a coffee", btn_view_hist: "📜 View Saved History",
             danger_zone: "⚠️ DANGER ZONE", btn_clear_hist: "Clear Complete History", switch_aisles_label: "🛒 Sort by Aisles / Zones:",
             sync_title: "📱 Device Sync:", btn_copy_key: "Copy Key", btn_link_device: "Link Device", btn_unlink_device: "Unlink Device",
-            zone_entrance: "Zone 1: Entrance & Fresh", zone_dry: "Zone 2: Dry Aisles", zone_cold: "Zone 3: Cold & Meats", zone_home: "Zone 4: Cleaning & Care", zone_checkout: "Zone 5: Checkout & Frozen"
+            zone_entrance: "Zone 1: Entrance & Fresh", zone_dry: "Zone 2: Dry Aisles", zone_cold: "Zone 3: Cold & Meats", zone_home: "Zone 4: Cleaning & Care", zone_checkout: "Zone 5: Checkout & Frozen",
+            scanner_title: "Receipt Scanner", scanner_sub: "Scan your paper receipt after shopping. If it's long, capture it in multiple photos.",
+            btn_photo_ticket: "Tap to photograph receipt", photo_tip: "Hold camera close for sharp focus", ocr_local_tip: "Processed locally on your device",
+            acc_items_title: "Detected Items:", btn_add_more_photos: "📸 Add another section of receipt", btn_cancel: "Cancel", btn_import_app: "Import To App!"
         },
         fr: {
             btn_cart: "Panier", search_ph: "🔍 Écrire un produit...", app_heading: "Dépenses Familiales",
@@ -629,12 +709,17 @@
             cat_oils: "Huiles", cat_canned: "Conserves", cat_coffee: "Café/Cacao", cat_drinks: "Boissons", cat_snacks: "Snacks/Friandises", cat_frozen: "Surgelés", cat_cleaning: "Nettoyage", cat_hygiene: "Hygiène", cat_paper: "Papier/Divers", cat_pets: "Animaux",
             btn_pay: "PAYER", cafe_title: "☕ Offrez-moi un café",
             cafe_desc: "<strong>SuperMart</strong> est gratuit et sans publicité.", pay_revolut: "💳 Payer par Carte / Google Pay", pay_paypal: "🅿️ Payer avec PayPal",
-            tut_title: "📖 Guide d'utilisation", tut_step1_b: "Avant de sortir:", tut_step1: "Préparez votre liste à la maison.", tut_step2_b: "En magasin:", tut_step2: "Ajustez les prix avec le crayon (✏️).", tut_step3_b: "Budget:", tut_step3: "Contrôlez la barre de couleur.", tut_step4_b: "Fini:", tut_step4: "Appuyez sur PAYER.", btn_understood: "Compris!",
+            tut_title: "📖 Guide d'utilisation v3.2.0", tut_step1_b: "Avant de sortir:", tut_step1: "Préparez votre liste à la maison.", tut_step2_b: "En magasin:", tut_step2: "Ajustez les prix avec le crayon (✏️).", 
+            tut_step3_scan_b: "🧾 Nouveauté Scanner:", tut_step3_scan: "Utilisez le bouton flottant 🧾 pour photographier votre reçu en papier. Les prix et produits se placeront automatiquement.",
+            tut_step3_b: "Budget:", tut_step3: "Contrôlez la barre de couleur.", tut_step4_b: "Fini:", tut_step4: "Appuyez sur PAYER.", btn_understood: "Compris!",
             calc_title: "🧮 Calculatrice", calc_use: "📋 Utiliser", offer_title: "⚖️ Calculateur d'offre:", price_label: "Prix:", grams_label: "Grammes:", units_label: "Qté:",
             frequents_sub: "⚡ Produits fréquents:", add_product_sub: "📝 Ajouter produit:", name_ph: "Nom", price_ph: "Prix €", btn_save_list: "Enregistrer",
             cart_title: "🛒 Produits dans le panier", btn_share_cart: "Partager sur WhatsApp", hist_title: "📜 Historique", settings_title: "⚙️ Paramètres",
             lang_select_label: "🌐 Langue de l'application:", budget_limit_label: "Limite de budget (€):", btn_save_limit: "Enregistrer la limite", btn_buy_coffee: "☕ Offrez-moi un café", btn_view_hist: "📜 Voir l'historique", danger_zone: "⚠️ ZONE DE DANGER", btn_clear_hist: "Effacer l'historique", switch_aisles_label: "🛒 Trier par rayons:", sync_title: "📱 Synchronisation mobile:", btn_copy_key: "Copier clé", btn_link_device: "Lier appareil", btn_unlink_device: "Délier appareil",
-            zone_entrance: "Zone 1: Entrée & Frais", zone_dry: "Zone 2: Épicerie", zone_cold: "Zone 3: Froid & Viandes", zone_home: "Zone 4: Entretien", zone_checkout: "Zone 5: Caisse & Surgelés"
+            zone_entrance: "Zone 1: Entrée & Frais", zone_dry: "Zone 2: Épicerie", zone_cold: "Zone 3: Froid & Viandes", zone_home: "Zone 4: Entretien", zone_checkout: "Zone 5: Caisse & Surgelés",
+            scanner_title: "Scanner de reçus", scanner_sub: "Scannez votre reçu après vos achats. S'il est long, prenez-le en plusieurs photos.",
+            btn_photo_ticket: "Toucher pour photographier", photo_tip: "Rapprochez l'appareil pour plus de netteté", ocr_local_tip: "Traité localement sur votre téléphone",
+            acc_items_title: "Produits Détectés:", btn_add_more_photos: "📸 Ajouter une autre section du reçu", btn_cancel: "Annuler", btn_import_app: "Importer Dans L'App!"
         },
         it: {
             btn_cart: "Carrello", search_ph: "🔍 Scrivi prodotto...", app_heading: "Spese Familiari",
@@ -642,12 +727,17 @@
             cat_fruit: "Frutta", cat_veg: "Verdura", cat_meat: "Macelleria", cat_fish: "Pescheria", cat_milk: "Latte", cat_dairy: "Latticini", cat_coldcuts: "Salumi", cat_bread: "Pane/Pasticceria", cat_pantry: "Pasta/Riso/Legumi", cat_eggs: "Uova",
             cat_oils: "Oli", cat_canned: "Conserve", cat_coffee: "Caffè/Cacao", cat_drinks: "Bevande", cat_snacks: "Snack/Dolci", cat_frozen: "Surgelati", cat_cleaning: "Pulizia", cat_hygiene: "Igiene", cat_paper: "Carta/Varie", cat_pets: "Animali",
             btn_pay: "PAGA", cafe_title: "☕ Offrimi un caffè", cafe_desc: "<strong>SuperMart</strong> è gratuita e senza pubblicità.", pay_revolut: "💳 Paga con Carta / Google Pay", pay_paypal: "🅿️ Paga con PayPal",
-            tut_title: "📖 Come usare SuperMart", tut_step1_b: "Prima di uscire:", tut_step1: "Prepara la lista da casa.", tut_step2_b: "Al supermercato:", tut_step2: "Usa la matita (✏️) per impostare il prezzo.", tut_step3_b: "Controllo spese:", tut_step3: "La barra indica il budget.", tut_step4_b: "Finito:", tut_step4: "Premi PAGA.", btn_understood: "Capito!",
+            tut_title: "📖 Come usare SuperMart v3.2.0", tut_step1_b: "Prima di uscire:", tut_step1: "Prepara la lista da casa.", tut_step2_b: "Al supermercato:", tut_step2: "Usa la matita (✏️) per impostare il prezzo.", 
+            tut_step3_scan_b: "🧾 Novità Scanner:", tut_step3_scan: "Usa il pulsante galleggiante 🧾 per fotografare lo scontrino cartaceo. Prezzi e prodotti si aggiorneranno automaticamente.",
+            tut_step3_b: "Controllo spese:", tut_step3: "La barra indica il budget.", tut_step4_b: "Finito:", tut_step4: "Premi PAGA.", btn_understood: "Capito!",
             calc_title: "🧮 Calcolatrice", calc_use: "📋 Usa", offer_title: "⚖️ Calcolatore Offerta:", price_label: "Prezzo:", grams_label: "Grammi:", units_label: "Qtà:",
             frequents_sub: "⚡ Prodotti Frequenti:", add_product_sub: "📝 Aggiungi Prodotto:", name_ph: "Nome", price_ph: "Prezzo €", btn_save_list: "Salva in Lista",
             cart_title: "🛒 Prodotti nel Carrello", btn_share_cart: "Condividi su WhatsApp", hist_title: "📜 Cronologia", settings_title: "⚙️ Impostazioni",
             lang_select_label: "🌐 Lingua dell'App:", budget_limit_label: "Limite Budget (€):", btn_save_limit: "Salva Limite", btn_buy_coffee: "☕ Offrimi un caffè", btn_view_hist: "📜 Vedi Cronologia", danger_zone: "⚠️ ZONA PERICOLO", btn_clear_hist: "Cancella Cronologia", switch_aisles_label: "🛒 Ordina per Corsie:", sync_title: "📱 Sincronizzazione:", btn_copy_key: "Copia Chiave", btn_link_device: "Collega Dispositivo", btn_unlink_device: "Scollega Dispositivo",
-            zone_entrance: "Zona 1: Ingresso e Freschi", zone_dry: "Zona 2: Corsie Secche", zone_cold: "Zona 3: Freddo e Carne", zone_home: "Zona 4: Pulizia", zone_checkout: "Zona 5: Uscita e Surgelati"
+            zone_entrance: "Zona 1: Ingresso e Freschi", zone_dry: "Zona 2: Corsie Secche", zone_cold: "Zona 3: Freddo e Carne", zone_home: "Zona 4: Pulizia", zone_checkout: "Zona 5: Uscita e Surgelati",
+            scanner_title: "Scanner scontrini", scanner_sub: "Scansiona lo scontrino cartaceo dopo la spesa. Se è lungo, scatta più foto.",
+            btn_photo_ticket: "Tocca per fotografare scontrino", photo_tip: "Avvicina la fotocamera per mettere a fuoco", ocr_local_tip: "Elaborato localmente sul telefono",
+            acc_items_title: "Prodotti Rilevati:", btn_add_more_photos: "📸 Aggiungi altra foto dello scontrino", btn_cancel: "Annulla", btn_import_app: "Importa Nell'App!"
         },
         de: {
             btn_cart: "Warenkorb", search_ph: "🔍 Produkt eingeben...", app_heading: "Familienausgaben",
@@ -655,12 +745,17 @@
             cat_fruit: "Obst", cat_veg: "Gemüse", cat_meat: "Metzgerei", cat_fish: "Fisch", cat_milk: "Milch", cat_dairy: "Molkerei", cat_coldcuts: "Wurstwaren", cat_bread: "Brot/Gebäck", cat_pantry: "Nudeln/Reis/Bohnen", cat_eggs: "Eier",
             cat_oils: "Öle", cat_canned: "Konserven", cat_coffee: "Kaffee/Kakao", cat_drinks: "Getränke", cat_snacks: "Snacks/Süßes", cat_frozen: "Tiefkühlkost", cat_cleaning: "Reinigung", cat_hygiene: "Hygiene", cat_paper: "Papier/Sonstiges", cat_pets: "Tiere",
             btn_pay: "BEZAHLEN", cafe_title: "☕ Kaufe mir einen Kaffee", cafe_desc: "<strong>SuperMart</strong> ist 100% kostenlos ohne Werbung.", pay_revolut: "💳 Mit Karte / Google Pay zahlen", pay_paypal: "🅿️ Mit PayPal zahlen",
-            tut_title: "📖 Anleitung", tut_step1_b: "Vor dem Einkauf:", tut_step1: "Erstelle deine Liste zu Hause.", tut_step2_b: "Im Laden:", tut_step2: "Ändere den Preis mit dem Stift (✏️).", tut_step3_b: "Budgetkontrolle:", tut_step3: "Achte auf den Farbbalten.", tut_step4_b: "Fertig:", tut_step4: "Tippe auf BEZAHLEN.", btn_understood: "Verstanden!",
+            tut_title: "📖 Anleitung v3.2.0", tut_step1_b: "Vor dem Einkauf:", tut_step1: "Erstelle deine Liste zu Hause.", tut_step2_b: "Im Laden:", tut_step2: "Ändere den Preis mit dem Stift (✏️).", 
+            tut_step3_scan_b: "🧾 Neu Beleg-Scanner:", tut_step3_scan: "Nutze den schwebenden Button 🧾, um deinen Papierbeleg zu fotografieren. Preise und Artikel werden automatisch zugeordnet.",
+            tut_step3_b: "Budgetkontrolle:", tut_step3: "Achte auf den Farbbalten.", tut_step4_b: "Fertig:", tut_step4: "Tippe auf BEZAHLEN.", btn_understood: "Verstanden!",
             calc_title: "🧮 Rechner", calc_use: "📋 Nutzen", offer_title: "⚖️ Angebotsrechner:", price_label: "Preis:", grams_label: "Gramm:", units_label: "Menge:",
             frequents_sub: "⚡ Häufige Produkte:", add_product_sub: "📝 Produkt hinzufügen:", name_ph: "Name", price_ph: "Preis €", btn_save_list: "Speichern",
             cart_title: "🛒 Artikel im Warenkorb", btn_share_cart: "Auf WhatsApp teilen", hist_title: "📜 Verlauf", settings_title: "⚙️ Einstellungen",
             lang_select_label: "🌐 App-Sprache:", budget_limit_label: "Budgetlimit (€):", btn_save_limit: "Limit Speichern", btn_buy_coffee: "☕ Kaufe mir einen Kaffee", btn_view_hist: "📜 Verlauf Anzeigen", danger_zone: "⚠️ GEFAHRENZONE", btn_clear_hist: "Verlauf Löschen", switch_aisles_label: "🛒 Nach Gängen sortieren:", sync_title: "📱 Synchronisation:", btn_copy_key: "Schlüssel kopieren", btn_link_device: "Gerät verknüpfen", btn_unlink_device: "Gerät trennen",
-            zone_entrance: "Zone 1: Eingang & Frische", zone_dry: "Zone 2: Vorratskammer", zone_cold: "Zone 3: Kühlung & Fleisch", zone_home: "Zone 4: Reinigung", zone_checkout: "Zone 5: Kasse & Tiefkühl"
+            zone_entrance: "Zone 1: Eingang & Frische", zone_dry: "Zone 2: Vorratskammer", zone_cold: "Zone 3: Kühlung & Fleisch", zone_home: "Zone 4: Reinigung", zone_checkout: "Zone 5: Kasse & Tiefkühl",
+            scanner_title: "Beleg-Scanner", scanner_sub: "Scanne deinen Papierbeleg nach dem Einkauf. Wenn er lang ist, mache mehere Fotos.",
+            btn_photo_ticket: "Tippen zum Fotografieren", photo_tip: "Kamera nah halten für Schärfe", ocr_local_tip: "Lokal auf dem Handy verarbeitet",
+            acc_items_title: "Erkannte Artikel:", btn_add_more_photos: "📸 Weitern Teil des Belegs hinzufügen", btn_cancel: "Abbrechen", btn_import_app: "In App Importieren!"
         },
         pt: {
             btn_cart: "Carrinho", search_ph: "🔍 Digite o produto...", app_heading: "Despesas Familiares",
@@ -668,12 +763,17 @@
             cat_fruit: "Fruta", cat_veg: "Legumes", cat_meat: "Talho", cat_fish: "Peixaria", cat_milk: "Leite", cat_dairy: "Lacticínios", cat_coldcuts: "Charcutaria", cat_bread: "Pão/Pastelaria", cat_pantry: "Massa/Arroz/Legumes", cat_eggs: "Ovos",
             cat_oils: "Óleos", cat_canned: "Conservas", cat_coffee: "Café/Cacau", cat_drinks: "Bebidas", cat_snacks: "Doces/Snacks", cat_frozen: "Congelados", cat_cleaning: "Limpeza", cat_hygiene: "Higiene", cat_paper: "Papel/Vários", cat_pets: "Animais",
             btn_pay: "PAGAR", cafe_title: "☕ Pague-me um café", cafe_desc: "<strong>SuperMart</strong> é 100% gratuito e sem anúncios.", pay_revolut: "💳 Pagar com Cartão / Google Pay", pay_paypal: "🅿️ Pagar com PayPal",
-            tut_title: "📖 Como usar SuperMart", tut_step1_b: "Antes de sair:", tut_step1: "Prepare a lista em casa.", tut_step2_b: "No supermercado:", tut_step2: "Ajuste preços com o lápis (✏️).", tut_step3_b: "Controlo de gastos:", tut_step3: "Veja a barra de orçamento.", tut_step4_b: "Ao terminar:", tut_step4: "Toque em PAGAR.", btn_understood: "Entendido!",
+            tut_title: "📖 Como usar SuperMart v3.2.0", tut_step1_b: "Antes de sair:", tut_step1: "Prepare a lista em casa.", tut_step2_b: "No supermercado:", tut_step2: "Ajuste preços com o lápis (✏️).", 
+            tut_step3_scan_b: "🧾 Novidade Scanner:", tut_step3_scan: "Use o botão flutuante 🧾 para fotografar o seu recibo de papel. Os preços e produtos serão atualizados automaticamente.",
+            tut_step3_b: "Controlo de gastos:", tut_step3: "Veja a barra de orçamento.", tut_step4_b: "Ao terminar:", tut_step4: "Toque em PAGAR.", btn_understood: "Entendido!",
             calc_title: "🧮 Calculadora", calc_use: "📋 Usar", offer_title: "⚖️ Calculadora de Oferta:", price_label: "Preço:", grams_label: "Gramas:", units_label: "Qtd:",
             frequents_sub: "⚡ Produtos Frequentes:", add_product_sub: "📝 Adicionar Produto:", name_ph: "Nome", price_ph: "Preço €", btn_save_list: "Guardar na Lista",
             cart_title: "🛒 Produtos no Carrinho", btn_share_cart: "Partilhar no WhatsApp", hist_title: "📜 Histórico", settings_title: "⚙️ Configurações",
             lang_select_label: "🌐 Idioma da Aplicação:", budget_limit_label: "Limite de Orçamento (€):", btn_save_limit: "Guardar Limite", btn_buy_coffee: "☕ Pague-me um café", btn_view_hist: "📜 Ver Histórico", danger_zone: "⚠️ ZONA DE PERIGO", btn_clear_hist: "Limpar Histórico Completo", switch_aisles_label: "🛒 Ordenar por Corredores:", sync_title: "📱 Sincronização:", btn_copy_key: "Copiar Chave", btn_link_device: "Vincular Dispositivo", btn_unlink_device: "Desvincular Dispositivo",
-            zone_entrance: "Zona 1: Entrada e Frescos", zone_dry: "Zona 2: Corredores Secos", zone_cold: "Zona 3: Frio e Carnes", zone_home: "Zona 4: Limpeza", zone_checkout: "Zona 5: Saída e Congelados"
+            zone_entrance: "Zona 1: Entrada e Frescos", zone_dry: "Zona 2: Corredores Secos", zone_cold: "Zona 3: Frio e Carnes", zone_home: "Zona 4: Limpeza", zone_checkout: "Zona 5: Saída e Congelados",
+            scanner_title: "Scanner de recibos", scanner_sub: "Digitalize o recibo de papel após a compra. Se for longo, tire várias fotos.",
+            btn_photo_ticket: "Toque para fotografar recibo", photo_tip: "Aproxime a câmara para focar", ocr_local_tip: "Processado localmente no telemóvel",
+            acc_items_title: "Produtos Detetados:", btn_add_more_photos: "📸 Adicionar outra secção do recibo", btn_cancel: "Cancelar", btn_import_app: "Importar Para A App!"
         },
         ca: {
             btn_cart: "Cistella", search_ph: "🔍 Escriu un producte...", app_heading: "Despesa Familiar",
@@ -681,12 +781,17 @@
             cat_fruit: "Fruita", cat_veg: "Verdura", cat_meat: "Carnisseria", cat_fish: "Peixateria", cat_milk: "Llet", cat_dairy: "Làctics", cat_coldcuts: "Embotits", cat_bread: "Pa/Forneria", cat_pantry: "Llegums/Pasta/Arròs", cat_eggs: "Ous",
             cat_oils: "Olis", cat_canned: "Conserves", cat_coffee: "Cafè/Cacau", cat_drinks: "Begudes", cat_snacks: "Snacks/Dolços", cat_frozen: "Congelats", cat_cleaning: "Neteja", cat_hygiene: "Higiene", cat_paper: "Paper/Varis", cat_pets: "Mascotes",
             btn_pay: "PAGAR", cafe_title: "☕ Convida'm a un Cafè", cafe_desc: "<strong>SuperMart</strong> és una aplicació 100% gratuïta i sense anuncis.", pay_revolut: "💳 Pagar amb Targeta / Google Pay", pay_paypal: "🅿️ Pagar amb PayPal",
-            tut_title: "📖 Com usar SuperMart", tut_step1_b: "Abans de sortir:", tut_step1: "Prepara la teva llista des de casa.", tut_step2_b: "Al súper:", tut_step2: "Ajusta els preus amb el llapis (✏️).", tut_step3_b: "Control de despesa:", tut_step3: "El semàfor t'avisarà del pressupost.", tut_step4_b: "En acabar:", tut_step4: "Prem PAGAR.", btn_understood: "Entès!",
+            tut_title: "📖 Com usar SuperMart v3.2.0", tut_step1_b: "Abans de sortir:", tut_step1: "Prepara la teva llista des de casa.", tut_step2_b: "Al súper:", tut_step2: "Ajusta els preus amb el llapis (✏️).", 
+            tut_step3_scan_b: "🧾 Novetat Escàner:", tut_step3_scan: "Fes servir el botó flotant 🧾 per fotografiar el teu tiquet de paper. Els preus i productes es col·locaran automàticament.",
+            tut_step3_b: "Control de despesa:", tut_step3: "El semàfor t'avisarà del pressupost.", tut_step4_b: "En acabar:", tut_step4: "Prem PAGAR.", btn_understood: "Entès!",
             calc_title: "🧮 Calculadora", calc_use: "📋 Usar", offer_title: "⚖️ Calculador d'Oferta:", price_label: "Preu:", grams_label: "Grams:", units_label: "Uts:",
             frequents_sub: "⚡ Productes Freqüents:", add_product_sub: "📝 Apuntar Producte:", name_ph: "Nom", price_ph: "Preu €", btn_save_list: "Guardar a la Llista",
             cart_title: "🛒 Productes a la Cistella", btn_share_cart: "Compartir per WhatsApp", hist_title: "📜 Historial de Compres", settings_title: "⚙️ Configuració",
-            lang_select_label: "🌐 Idioma de l'Aplicació:", budget_limit_label: "Límit de Pressupost (€):", btn_save_limit: "Guardar Límit", btn_buy_coffee: "☕ Convida'm a un cafè", btn_view_hist: "📜 Veure Historial Guardat", danger_zone: "⚠️ ZONA DE PERILL", btn_clear_hist: "Esborrar Historial Complet", switch_aisles_label: "🛒 Ordenar per Passadissos:", sync_title: "📱 Sincronització Dispositius:", btn_copy_key: "Copiar Clau", btn_link_device: "Vincular Mòbil", btn_unlink_device: "Desvincular Dispositiu",
-            zone_entrance: "Zona 1: Entrada i Frescos", zone_dry: "Zona 2: Passadissos Secs", zone_cold: "Zona 3: Murals de Fred i Carna", zone_home: "Zona 4: Neteja", zone_checkout: "Zona 5: Sortida i Congelats"
+            lang_select_label: "🌐 Idioma de l'Aplicació:", budget_limit_label: "Límit de Pressupost (€):", btn_save_limit: "Guardar Límit", btn_buy_coffee: "☕ Convida'm a un cafè", btn_view_hist: "📜 Veure Historial Guardat", danger_zone: "⚠️ ZONA DE PERILL", btn_clear_hist: "Esborrar Historial Complet", switch_aisles_label: "🛒 Ordenar per Passadissos:", sync_title: "📱 Sincronització Dispositius:", btn_copy_key: "Copiar Clau", btn_link_device: "Vincular Mòbil", btn_unlink_dispositivo: "Desvincular Dispositiu",
+            zone_entrance: "Zona 1: Entrada i Frescos", zone_dry: "Zona 2: Passadissos Secs", zone_cold: "Zona 3: Murals de Fred i Carna", zone_home: "Zona 4: Neteja", zone_checkout: "Zona 5: Sortida i Congelats",
+            scanner_title: "Escàner de tiquets", scanner_sub: "Escaneja el teu tiquet de paper després de comprar. Si és llarg, fes-li diverses fotos.",
+            btn_photo_ticket: "Toca per fotografiar tiquet", photo_tip: "Apropa la càmera per a més nitidesa", ocr_local_tip: "Processat localment al teu mòbil",
+            acc_items_title: "Productes Detectats:", btn_add_more_photos: "📸 Afegir un altre tram del tiquet", btn_cancel: "Cancel·lar", btn_import_app: "Importar A L'App!"
         }
     };
 
@@ -827,29 +932,32 @@
         document.getElementById('p' + n).classList.add('active');
     }
 
-    function mostrarToast(msg) {
+    // Avisos diferenciados por color: 'exito' (verde) para carro, 'info' (azul) para listas/configuración
+    function mostrarToast(msg, tipo = 'exito') {
         const t = document.getElementById('toast');
         t.innerText = msg;
+        t.className = tipo === 'info' ? 'toast-info' : 'toast-exito';
         t.style.display = 'block';
         setTimeout(() => { t.style.display = 'none'; }, 1800);
     }
 
-    // --- LÓGICA DE SUMAR ACTUALIZADA: RECALCULA EL PRECIO UNITARIO SI YA ESTÁ EN EL CARRO ---
     function sumar(nombre, precio, categoria) {
+        const pNum = parseFloat(precio) || 0;
         const existente = carroActual.find(item => item.nombre.toLowerCase() === nombre.toLowerCase());
+        
         if (existente) {
             const numUnidadesSumar = uds;
-            if (!confirm(`⚠️ "${nombre}" ${langKey === 'es' ? 'ya está en el carro' : 'is already in cart'} (${existente.unidades}x).\n\n${langKey === 'es' ? '¿Quieres sumar' : 'Add'} ${numUnidadesSumar} ${langKey === 'es' ? 'unidad(es) más con precio' : 'more unit(s) with price'} ${precio.toFixed(2)}€?`)) {
+            if (!confirm(`⚠️ "${nombre}" ${langKey === 'es' ? 'ya está en el carro' : 'is already in cart'} (${existente.unidades}x).\n\n${langKey === 'es' ? '¿Quieres sumar' : 'Add'} ${numUnidadesSumar} ${langKey === 'es' ? 'unidad(es) más con precio' : 'more unit(s) with price'} ${pNum.toFixed(2)}€?`)) {
                 return;
             }
             existente.unidades += numUnidadesSumar;
-            existente.precioUnitario = precio || 0;
+            existente.precioUnitario = pNum;
             existente.total = existente.unidades * existente.precioUnitario;
-            mostrarToast(`✓ ¡Sumado +${numUnidadesSumar} a ${nombre}!`);
+            mostrarToast(`✓ ¡Sumado +${numUnidadesSumar} a ${nombre}!`, 'exito');
         } else {
-            const importe = (precio || 0) * uds;
-            carroActual.push({ id: Date.now(), nombre: nombre, categoria: categoria, precioUnitario: precio || 0, unidades: uds, total: importe, cogido: false });
-            mostrarToast(`✓ ¡${nombre} (${uds}x) ${langKey === 'es' ? 'añadido!' : 'added!'}`);
+            const importe = pNum * uds;
+            carroActual.push({ id: Date.now(), nombre: nombre, categoria: categoria, precioUnitario: pNum, unidades: uds, total: importe, cogido: false });
+            mostrarToast(`✓ ¡${nombre} (${uds}x) ${langKey === 'es' ? 'añadido!' : 'added!'}`, 'exito');
         }
 
         uds = 1;
@@ -858,11 +966,32 @@
         if(navigator.vibrate) navigator.vibrate(40);
     }
 
+    function sumarFrecuentePorIndice(index) {
+        if (!habituales[categoriaActiva] || !habituales[categoriaActiva][index]) return;
+        const prod = habituales[categoriaActiva][index];
+        sumar(prod.nombre, prod.precio, categoriaActiva);
+    }
+
+    function editarPrecioDirectoCarro(id, nuevoValorStr) {
+        const item = carroActual.find(p => p.id === id);
+        if (!item) return;
+
+        const pNum = parseFloat(nuevoValorStr.replace(',', '.'));
+        if (isNaN(pNum) || pNum < 0) return;
+
+        item.precioUnitario = pNum;
+        item.total = item.unidades * item.precioUnitario;
+        
+        actualizar();
+        renderDesglose();
+        mostrarToast(`✏️ ${langKey === 'es' ? 'Precio actualizado:' : 'Price updated:'} ${item.nombre} (${pNum.toFixed(2)}€)`, 'info');
+    }
+
     function toggleCogido(id) {
         const item = carroActual.find(p => p.id === id);
         if (item) {
             item.cogido = !item.cogido;
-            guardarDatosDB('carro_temp', carroActual);
+            actualizar();
             renderDesglose();
             if(navigator.vibrate) navigator.vibrate(30);
         }
@@ -888,7 +1017,7 @@
         if(u1Btns.length > 0) u1Btns[0].classList.add('active');
     }
 
-    function calcularTotal() { return carroActual.reduce((acc, item) => acc + item.total, 0); }
+    function calcularTotal() { return carroActual.reduce((acc, item) => acc + (parseFloat(item.total) || 0), 0); }
 
     function actualizar() {
         const total = calcularTotal();
@@ -914,13 +1043,14 @@
         const categoriasConCero = new Set();
 
         for (let cat in habituales) {
-            if (habituales[cat].some(p => p.precio === 0)) {
+            if (habituales[cat].some(p => parseFloat(p.precio) === 0)) {
                 categoriasConCero.add(cat);
             }
         }
 
         carroActual.forEach(item => {
-            if (item.precioUnitario === 0 || item.total === 0) {
+            const pUnit = parseFloat(item.precioUnitario) || 0;
+            if (pUnit === 0 || item.total === 0) {
                 categoriasConCero.add(item.categoria);
             }
             subtotales[item.categoria] = (subtotales[item.categoria] || 0) + item.total;
@@ -1045,12 +1175,12 @@
             <div class="item-habitual-card ${prod.enCasa ? 'en-casa' : ''}">
                 <div class="item-habitual-info">
                     <strong>${prod.nombre} ${prod.enCasa ? (langKey === 'es' ? '✅ (En casa)' : '✅ (At home)') : ''}</strong>
-                    <span class="item-habitual-precio-badge" style="background:${prod.precio > 0 ? 'var(--azul)' : 'var(--rojo)'}">${prod.precio > 0 ? prod.precio.toFixed(2) + '€' : '⚠️ 0.00€'}</span>
+                    <span class="item-habitual-precio-badge" style="background:${prod.precio > 0 ? 'var(--azul)' : 'var(--rojo)'}">${prod.precio > 0 ? parseFloat(prod.precio).toFixed(2) + '€' : '⚠️ 0.00€'}</span>
                 </div>
                 <div class="item-habitual-acciones">
                     <button class="btn-mini" style="background:${prod.enCasa ? 'var(--verde)' : 'rgba(0,0,0,0.1)'}; color:${prod.enCasa ? 'white' : 'var(--texto)'}" onclick="toggleEnCasa(${index})" title="Marcar en casa">🏠</button>
                     <button class="btn-mini" style="background:rgba(0,0,0,0.15); color:var(--texto);" onclick="editarNombreYPrecioHabitual(${index})" title="Editar nombre y precio">✏️</button>
-                    <button class="btn-mini" style="background:var(--verde); color:white; padding:8px 14px;" onclick="sumar('${prod.nombre}', ${prod.precio}, '${categoriaActiva}')">+ ${langKey === 'es' ? 'Añadir' : 'Add'}</button>
+                    <button class="btn-mini" style="background:var(--verde); color:white; padding:8px 14px;" onclick="sumarFrecuentePorIndice(${index})">+ ${langKey === 'es' ? 'Añadir' : 'Add'}</button>
                     <button class="btn-mini" style="background:var(--rojo); color:white;" onclick="eliminarHabitual(${index})">🗑️</button>
                 </div>
             </div>
@@ -1064,14 +1194,13 @@
         renderFrecuentes();
     }
 
-    // --- EDICIÓN EN FRECUENTES CON RECALCULO AUTOMÁTICO DEL CARRO ---
     function editarNombreYPrecioHabitual(index) {
         const prod = habituales[categoriaActiva][index];
         const nombreAnterior = prod.nombre;
         const nuevoNombre = prompt(`${langKey === 'es' ? 'Corregir nombre del producto' : 'Edit product name'}:`, prod.nombre);
         if (nuevoNombre === null || nuevoNombre.trim() === '') return;
 
-        const nuevoPrecioStr = prompt(`${langKey === 'es' ? 'Actualizar precio para' : 'Update price for'} "${nuevoNombre.trim()}":`, prod.precio > 0 ? prod.precio.toFixed(2) : '0.00');
+        const nuevoPrecioStr = prompt(`${langKey === 'es' ? 'Actualizar precio para' : 'Update price for'} "${nuevoNombre.trim()}":`, prod.precio > 0 ? parseFloat(prod.precio).toFixed(2) : '0.00');
         if (nuevoPrecioStr === null) return;
 
         const nuevoPrecio = parseFloat(nuevoPrecioStr.replace(',', '.'));
@@ -1084,18 +1213,17 @@
         prod.precio = nuevoPrecio;
         guardarDatosDB('habituales_v130', habituales);
 
-        // Actualizar automáticamente si ya existe dentro del carro activo
         const enCarro = carroActual.find(item => item.nombre.toLowerCase() === nombreAnterior.toLowerCase());
         if (enCarro) {
             enCarro.nombre = prod.nombre;
             enCarro.precioUnitario = prod.precio;
             enCarro.total = enCarro.unidades * enCarro.precioUnitario;
-            guardarDatosDB('carro_temp', carroActual);
+            actualizar();
         }
 
         renderFrecuentes();
         actualizar();
-        mostrarToast(`✏️ ${langKey === 'es' ? 'Actualizado:' : 'Updated:'} ${prod.nombre} (${nuevoPrecio.toFixed(2)}€)`);
+        mostrarToast(`✏️ ${langKey === 'es' ? 'Actualizado:' : 'Updated:'} ${prod.nombre} (${nuevoPrecio.toFixed(2)}€)`, 'info');
     }
 
     function guardarNuevoEnLista() {
@@ -1120,7 +1248,7 @@
         inputPrecio.value = '';
         renderFrecuentes();
         actualizar();
-        mostrarToast(precio > 0 ? `📌 ${nombre} ${langKey === 'es' ? 'guardado en lista' : 'saved to list'}` : `📌 ${nombre} ${langKey === 'es' ? 'apuntado (0.00€)' : 'added (0.00€)'}`);
+        mostrarToast(precio > 0 ? `📌 ${nombre} ${langKey === 'es' ? 'guardado en lista' : 'saved to list'}` : `📌 ${nombre} ${langKey === 'es' ? 'apuntado (0.00€)' : 'added (0.00€)'}`, 'info');
     }
 
     function eliminarHabitual(index) {
@@ -1128,6 +1256,194 @@
         guardarDatosDB('habituales_v130', habituales);
         renderFrecuentes();
         actualizar();
+    }
+
+    /* --- ESCÁNER DE TICKETS MULTIFOTO (OCR TESSERACT.JS) --- */
+    let productosDetectadosTicket = [];
+
+    function abrirModalEscaner() {
+        abrirModal('modal-escaner');
+        resetearModalEscaner();
+    }
+
+    function cerrarModalEscaner() {
+        cerrarModal('modal-escaner');
+        resetearModalEscaner();
+    }
+
+    function resetearModalEscaner() {
+        document.getElementById('input-foto-ticket').value = '';
+        document.getElementById('vista-previa-contenedor').style.display = 'none';
+        document.getElementById('instrucciones-subida').style.display = 'block';
+        document.getElementById('loader-escaner').style.display = 'none';
+        document.getElementById('contenedor-resultados-ticket').style.display = 'none';
+        document.getElementById('lista-items-detectados').innerHTML = '';
+        document.getElementById('btn-guardar-ticket').disabled = true;
+        document.getElementById('texto-boton-captura').textContent = t.btn_photo_ticket || 'Toca para fotografiar ticket';
+        productosDetectadosTicket = [];
+    }
+
+    function procesarFotoTicket(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('img-vista-previa').src = e.target.result;
+            document.getElementById('vista-previa-contenedor').style.display = 'block';
+            document.getElementById('instrucciones-subida').style.display = 'none';
+            iniciarLecturaOCR(file);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function iniciarLecturaOCR(file) {
+        const loader = document.getElementById('loader-escaner');
+        const textoProgreso = document.getElementById('texto-progreso-ocr');
+        const btnGuardar = document.getElementById('btn-guardar-ticket');
+
+        loader.style.display = 'block';
+        btnGuardar.disabled = true;
+
+        try {
+            const worker = await Tesseract.createWorker('spa', 1, {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        textoProgreso.textContent = `Analizando... ${Math.round((m.progress || 0) * 100)}%`;
+                    }
+                }
+            });
+
+            const { data: { lines } } = await worker.recognize(file);
+            await worker.terminate();
+
+            const regexPrecio = /(\d+[.,]\d{2})\s*$/;
+
+            lines.forEach(linea => {
+                const textoLimpio = linea.text.trim();
+                const match = textoLimpio.match(regexPrecio);
+
+                if (match) {
+                    const precio = parseFloat(match[1].replace(',', '.'));
+                    let nombre = textoLimpio.replace(regexPrecio, '').trim();
+                    nombre = nombre.replace(/^[^a-zA-ZáéíóúÁÉÍÓÚñÑ]+/, '');
+
+                    const esTotalOFactura = /total|subtotal|iva|base|efectivo|tarjeta|fecha|gracias|caja|importe/i.test(nombre);
+
+                    if (nombre.length >= 3 && !isNaN(precio) && precio > 0 && !esTotalOFactura) {
+                        const nombreCap = capitalizarTexto(nombre);
+                        const yaExiste = productosDetectadosTicket.some(p => p.nombre.toLowerCase() === nombreCap.toLowerCase() && p.precio === precio);
+
+                        if (!yaExiste) {
+                            productosDetectadosTicket.push({
+                                nombre: nombreCap,
+                                precio: precio,
+                                categoria: detectarCategoriaAutomatica(nombreCap)
+                            });
+                        }
+                    }
+                }
+            });
+
+            loader.style.display = 'none';
+            document.getElementById('texto-boton-captura').textContent = t.btn_add_more_photos || '📸 Añadir otra foto del ticket';
+            renderizarProductosDetectados();
+
+        } catch (error) {
+            console.error('❌ Error OCR:', error);
+            loader.style.display = 'none';
+            alert(langKey === 'es' ? 'No se pudo procesar la imagen. Intenta fotografiar con más luz y enfoque.' : 'Image processing failed. Try taking photo with more light.');
+        }
+    }
+
+    function renderizarProductosDetectados() {
+        const contenedorResultados = document.getElementById('contenedor-resultados-ticket');
+        const listaItems = document.getElementById('lista-items-detectados');
+        const totalDetectados = document.getElementById('total-detectados');
+        const btnGuardar = document.getElementById('btn-guardar-ticket');
+
+        listaItems.innerHTML = '';
+        totalDetectados.textContent = `${productosDetectadosTicket.length} acumulados`;
+
+        if (productosDetectadosTicket.length === 0) {
+            listaItems.innerHTML = `<p style="text-align:center; color:gray; padding:10px 0; margin:0;">${langKey === 'es' ? 'No se reconocieron precios claros en esta foto.' : 'No clear prices recognized in this photo.'}</p>`;
+            contenedorResultados.style.display = 'block';
+            return;
+        }
+
+        productosDetectadosTicket.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:5px; border-bottom:1px solid rgba(0,0,0,0.06);';
+            div.innerHTML = `
+                <div style="flex:1; padding-right:6px;">
+                    <input type="text" value="${item.nombre}" onchange="actualizarItemTicket(${index}, 'nombre', this.value)" 
+                        style="background:transparent; border:none; border-bottom:1px solid var(--azul); color:var(--texto); font-weight:bold; width:100%; font-size:12px;">
+                    <small style="color:var(--azul); font-size:10px; font-weight:bold;">${item.categoria}</small>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <input type="number" step="0.01" value="${item.precio.toFixed(2)}" onchange="actualizarItemTicket(${index}, 'precio', this.value)" 
+                        style="width:55px; padding:3px; border-radius:4px; border:1px solid #ccc; text-align:right; font-weight:bold; font-size:12px; color:var(--verde);">
+                    <span>€</span>
+                    <button onclick="eliminarItemTicket(${index})" style="background:var(--rojo); color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:11px;">✕</button>
+                </div>
+            `;
+            listaItems.appendChild(div);
+        });
+
+        contenedorResultados.style.display = 'block';
+        btnGuardar.disabled = false;
+    }
+
+    function actualizarItemTicket(index, campo, valor) {
+        if (campo === 'precio') {
+            productosDetectadosTicket[index].precio = parseFloat(valor) || 0;
+        } else {
+            productosDetectadosTicket[index].nombre = valor;
+        }
+    }
+
+    function eliminarItemTicket(index) {
+        productosDetectadosTicket.splice(index, 1);
+        renderizarProductosDetectados();
+    }
+
+    function capitalizarTexto(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    function detectarCategoriaAutomatica(nombre) {
+        const n = nombre.toLowerCase();
+        for (let cat in diccionarioSmartCategorias) {
+            const palabras = diccionarioSmartCategorias[cat];
+            if (palabras.some(p => n.includes(p))) return cat;
+        }
+        return 'Papel/Varios';
+    }
+
+    async function confirmarImportacionTicket() {
+        if (productosDetectadosTicket.length === 0) return;
+
+        let importadosCount = 0;
+
+        productosDetectadosTicket.forEach(item => {
+            const catTarget = item.categoria || 'Papel/Varios';
+            if (!habituales[catTarget]) habituales[catTarget] = [];
+
+            const existente = habituales[catTarget].find(p => p.nombre.toLowerCase() === item.nombre.toLowerCase());
+            if (existente) {
+                existente.precio = item.precio;
+            } else {
+                habituales[catTarget].push({ nombre: item.nombre, precio: item.precio, enCasa: false });
+            }
+            importadosCount++;
+        });
+
+        guardarDatosDB('habituales_v130', habituales);
+        actualizar();
+        if (categoriaActiva) renderFrecuentes();
+
+        cerrarModalEscaner();
+        alert(langKey === 'es' ? `¡${importadosCount} productos importados y sincronizados correctamente en tus tarjetas!` : `¡${importadosCount} items successfully imported to your app!`);
     }
 
     function calcInput(val) {
@@ -1181,8 +1497,6 @@
         guardarDatosDB('compras_detalladas_v150', historialCompras);
 
         carroActual = [];
-        guardarDatosDB('carro_temp', []);
-
         actualizar();
         alert(langKey === 'es' ? "¡Compra guardada con su desglose! Carro vacío para la siguiente." : "Purchase saved with breakdown! Cart cleared for the next one.");
     }
@@ -1239,11 +1553,19 @@
                         ${item.cogido ? '✓' : '◯'}
                     </button>
                     <div>
-                        <strong>${item.nombre}</strong> <small>(${item.unidades}x ${item.precioUnitario > 0 ? item.precioUnitario.toFixed(2) + '€' : '⚠️ 0.00€'})</small><br>
-                        <span style="color:var(--azul); font-weight:bold;">${item.total.toFixed(2)}€</span>
+                        <strong>${item.nombre}</strong> <small>(${item.unidades}x)</small><br>
+                        <div style="display:flex; align-items:center; gap:4px; margin-top:2px;" onclick="event.stopPropagation();">
+                            <input type="number" step="0.01" value="${item.precioUnitario > 0 ? parseFloat(item.precioUnitario).toFixed(2) : '0.00'}" 
+                                onchange="editarPrecioDirectoCarro(${item.id}, this.value)" 
+                                style="width:65px; padding:2px 4px; border-radius:6px; border:1px solid #ccc; font-weight:bold; font-size:13px; color:var(--azul);">
+                            <span style="font-size:12px; font-weight:bold;">€</span>
+                        </div>
                     </div>
                 </div>
-                <button class="btn-mini" style="background:var(--rojo); color:white;" onclick="eliminarDelCarro(${item.id})">🗑️</button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="color:var(--azul); font-weight:bold; font-size:14px;">${item.total.toFixed(2)}€</span>
+                    <button class="btn-mini" style="background:var(--rojo); color:white;" onclick="eliminarDelCarro(${item.id})">🗑️</button>
+                </div>
             </div>
         `).join('');
     }
@@ -1288,7 +1610,7 @@
             guardarDatosDB('compras_detalladas_v150', historialCompras);
             actualizar();
             renderHistorialDetallado();
-            mostrarToast("🗑️ " + (langKey === 'es' ? "Compra eliminada" : "Purchase deleted"));
+            mostrarToast("🗑️ " + (langKey === 'es' ? "Compra eliminada" : "Purchase deleted"), 'info');
         }
     }
 
@@ -1320,7 +1642,7 @@
         const uid = localStorage.getItem('supermart_uid');
         if(uid) {
             navigator.clipboard.writeText(uid).then(() => {
-                mostrarToast("📋 ¡Clave copiada al portapapeles!");
+                mostrarToast("📋 ¡Clave copiada al portapapeles!", 'info');
             }).catch(() => {
                 prompt("Copia esta clave para usarla en otro móvil:", uid);
             });
@@ -1336,9 +1658,8 @@
         }
     }
 
-    // --- FUNCIÓN DE DESVINCULACIÓN INTEGRADA ---
     function desvincularDispositivo() {
-        if(confirm(langKey === 'es' ? "¿Quieres desvincular este dispositivo?\nSe generará una clave UID totalmente nueva e independiente." : "Unlink this device?\nA completely new independent UID key will be generated.")) {
+        if(confirm(langKey === 'es' ? "¿Quieres desvincular este dispositivo?\nSe generará una clave UID totalmente nueva e independent." : "Unlink this device?\nA completely new independent UID key will be generated.")) {
             localStorage.removeItem('supermart_uid');
             alert("🔄 Dispositivo desvinculado. Reiniciando app para generar un nuevo código único...");
             location.reload();
