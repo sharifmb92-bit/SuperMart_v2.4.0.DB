@@ -1,6 +1,6 @@
 {
   "id": "supermart-control-gasto-familiar",
-  "name": "SuperMart TOTAL",
+  "name": "SuperMart",
   "short_name": "SuperMart",
   "description": "Control de gastos y gestión práctica de la compra familiar en supermercados.",
   "start_url": "./index.html",
