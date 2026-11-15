@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SuperMart_v 3.2.1</title>
+    <title>SuperMart_v 3.2.2</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- PWA -->
@@ -328,7 +328,7 @@
 <div class="modal" id="modal-tutorial">
     <div class="modal-contenido">
         <div class="modal-header">
-            <h3 style="margin:0;" data-i18n="tut_title">📖 Cómo usar SuperMart v3.2.1</h3>
+            <h3 style="margin:0;" data-i18n="tut_title">📖 Cómo usar SuperMart v3.2.2</h3>
             <button class="btn-mini" onclick="cerrarModal('modal-tutorial')">✕</button>
         </div>
         <div style="font-size:13px; line-height:1.6;">
@@ -338,7 +338,7 @@
             <p>4️⃣ <strong data-i18n="tut_step3_b">Control de gasto:</strong> <span data-i18n="tut_step3">El semáforo superior te avisará en verde, amarillo y rojo según te acerques a tu presupuesto.</span></p>
             <p>5️⃣ <strong data-i18n="tut_step4_b">Al terminar:</strong> <span data-i18n="tut_step4">Pulsa <b>PAGAR</b> para registrar el supermercado y guardar la lista en tu historial.</span></p>
         </div>
-        <button class="btn-mini" style="background:var(--verde); color:white; width:100%; padding:12px; font-weight:bold; margin-top:10px;" onclick="cerrarModal('modal-tutorial')" data-i18n="btn_understood">¡Entendido!</button>
+        <button class="btn-mini" style="background:var(--verde); color:white; width:100%; padding:12px; font-weight:bold; margin-top:10px;" onclick="confirmarTutorial()" data-i18n="btn_understood">¡Entendido!</button>
     </div>
 </div>
 
@@ -522,10 +522,13 @@
         localStorage.setItem('supermart_uid', userId);
     }
 
-    // Bandera para evitar bucle entre la app local y el servidor en tiempo real
+    // Bandera anti-bucles (evita rebote local <-> nube)
     let esActualizacionLocal = false;
+    // Escudo anti-sobrescritura al vincular un nuevo dispositivo
+    let esperandoPrimeraDescarga = localStorage.getItem('supermart_vinculando') === 'true';
 
     window.sincronizarCloud = async function(clave, valor) {
+        if (esperandoPrimeraDescarga) return; // Bloquea subidas hasta descargar la nube del anfitrión
         try {
             esActualizacionLocal = true;
             await setDoc(doc(dbCloud, "usuarios_supermart", userId), {
@@ -543,7 +546,13 @@
         try {
             const docRef = doc(dbCloud, "usuarios_supermart", userId);
             onSnapshot(docRef, (docSnap) => {
-                if (esActualizacionLocal) return; // Si el cambio viene de este dispositivo, ignorar rebote
+                if (esActualizacionLocal) return; // Ignorar eco de cambio local
+
+                // Al recibir la primera instantánea de la nube, liberamos el escudo de vinculación
+                if (esperandoPrimeraDescarga) {
+                    esperandoPrimeraDescarga = false;
+                    localStorage.removeItem('supermart_vinculando');
+                }
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -552,31 +561,36 @@
                     if (data.habituales_v130 && data.habituales_v130 !== localStorage.getItem('habituales_v130')) {
                         localStorage.setItem('habituales_v130', data.habituales_v130);
                         if (typeof habituales !== 'undefined') habituales = JSON.parse(data.habituales_v130);
+                        if (typeof guardarSoloLocalDB === 'function') guardarSoloLocalDB('habituales_v130', habituales);
                         huboCambios = true;
                     }
                     if (data.carro_temp && data.carro_temp !== localStorage.getItem('carro_temp')) {
                         localStorage.setItem('carro_temp', data.carro_temp);
                         if (typeof carroActual !== 'undefined') carroActual = JSON.parse(data.carro_temp);
+                        if (typeof guardarSoloLocalDB === 'function') guardarSoloLocalDB('carro_temp', carroActual);
                         huboCambios = true;
                     }
                     if (data.compras_detalladas_v150 && data.compras_detalladas_v150 !== localStorage.getItem('compras_detalladas_v150')) {
                         localStorage.setItem('compras_detalladas_v150', data.compras_detalladas_v150);
                         if (typeof historialCompras !== 'undefined') historialCompras = JSON.parse(data.compras_detalladas_v150);
+                        if (typeof guardarSoloLocalDB === 'function') guardarSoloLocalDB('compras_detalladas_v150', historialCompras);
                         huboCambios = true;
                     }
                     if (data.limite_v110 && data.limite_v110 !== localStorage.getItem('limite_v110')) {
                         localStorage.setItem('limite_v110', data.limite_v110);
                         if (typeof limitePresupuesto !== 'undefined') limitePresupuesto = parseFloat(data.limite_v110);
+                        if (typeof guardarSoloLocalDB === 'function') guardarSoloLocalDB('limite_v110', limitePresupuesto);
                         huboCambios = true;
                     }
                     if (data.modo_pasillos_v270 && data.modo_pasillos_v270 !== localStorage.getItem('modo_pasillos_v270')) {
                         localStorage.setItem('modo_pasillos_v270', data.modo_pasillos_v270);
                         if (typeof modoPasillos !== 'undefined') modoPasillos = (data.modo_pasillos_v270 === 'true');
+                        if (typeof guardarSoloLocalDB === 'function') guardarSoloLocalDB('modo_pasillos_v270', modoPasillos);
                         huboCambios = true;
                     }
 
                     if (huboCambios && typeof actualizar === 'function') {
-                        actualizar();
+                        actualizar(true); // true = solo refrescar vista sin re-disparar sincronizarCloud
                         if (typeof categoriaActiva !== 'undefined' && categoriaActiva && typeof renderFrecuentes === 'function') {
                             renderFrecuentes();
                         }
@@ -600,7 +614,7 @@
         }
 
         const VER_KEY = 'supermart_version_instalada';
-        const VERSION_ACTUAL = '3.2.1_clean';
+        const VERSION_ACTUAL = '3.2.2_clean';
 
         if (localStorage.getItem(VER_KEY) !== VERSION_ACTUAL) {
             if ('caches' in window) {
@@ -654,7 +668,7 @@
             btn_pay: "PAGAR", cafe_title: "☕ Invítame a un Café",
             cafe_desc: "<strong>SuperMart</strong> es una aplicación 100% gratuita y libre de anuncios.<br><br>Si te resulta útil para gestionar tus compras diarias, puedes hacer una pequeña aportación. Puedes pagar con <strong>tarjeta normal, Google Pay o PayPal</strong> de forma rápida y segura.",
             pay_revolut: "💳 Pagar con Tarjeta o Google Pay (Revolut)", pay_paypal: "🅿️ Pagar con PayPal",
-            tut_title: "📖 Cómo usar SuperMart v3.2.1",
+            tut_title: "📖 Cómo usar SuperMart v3.2.2",
             tut_step1_b: "Antes de salir:", tut_step1: "Abre la app y entra en cada categoría. Guarda lo que necesitas comprando o apuntando nuevos productos (incluso con 0.00€ para apuntarlo desde casa).",
             tut_step2_b: "En el súper:", tut_step2: "Si un producto tiene 0.00€ o ha cambiado de precio, toca el lápiz (✏️) para poner su valor real antes de añadirlo al carro.",
             tut_step3_scan_b: "🧾 Novedad Escáner:", tut_step3_scan: "Usa el botón flotante 🧾 para fotografiar tu recibo de papel tras comprar. Los precios y productos se colocarán en sus tarjetas solas.",
@@ -673,7 +687,6 @@
             scanner_title: "Escáner de Tickets de Compra", scanner_sub: "Escanea tu recibo de papel tras comprar. Si el ticket es largo, puedes fotografiarlo por tramos con el botón de añadir fotos.",
             btn_photo_ticket: "Toca para fotografiar ticket", photo_tip: "Acerca la cámara para asegurar lectura nítida", ocr_local_tip: "Procesando localmente en tu móvil",
             acc_items_title: "Productos Acumulados:", btn_add_more_photos: "📸 Añadir otro tramo del ticket", btn_cancel: "Cancelar", btn_import_app: "¡Importar A la App!",
-            /* Traducciones dinámicas de productos frecuentes base */
             prod_apples: "Manzanas", prod_bananas: "Plátanos", prod_tomatoes: "Tomates", prod_lettuce: "Lechuga",
             prod_chicken_breast: "Pechuga Pollo", prod_minced_meat: "Carne Picada", prod_detergent: "Detergente",
             prod_floor_cleaner: "Fregasuelos", prod_pack_milk: "Pack Leche 6L", prod_liter_milk: "Litro Leche",
@@ -687,7 +700,7 @@
             btn_pay: "CHECKOUT", cafe_title: "☕ Buy me a Coffee",
             cafe_desc: "<strong>SuperMart</strong> is 100% free with no ads.<br><br>Support the app with card, Google Pay or PayPal.",
             pay_revolut: "💳 Pay with Card or Google Pay (Revolut)", pay_paypal: "🅿️ Pay with PayPal",
-            tut_title: "📖 How to use SuperMart v3.2.1",
+            tut_title: "📖 How to use SuperMart v3.2.2",
             tut_step1_b: "Before shopping:", tut_step1: "Open the app and check each category. Add items to your list at home even at €0.00.",
             tut_step2_b: "At the store:", tut_step2: "Tap the pencil (✏️) to set exact prices before adding items to your cart.",
             tut_step3_scan_b: "🧾 New Receipt Scanner:", tut_step3_scan: "Use the floating button 🧾 to photograph your paper receipt after shopping. Prices and items will automatically update in your cards.",
@@ -718,7 +731,7 @@
             cat_oils: "Huiles", cat_canned: "Conserves", cat_coffee: "Café/Cacao", cat_drinks: "Boissons", cat_snacks: "Snacks/Friandises", cat_frozen: "Surgelés", cat_cleaning: "Nettoyage", cat_hygiene: "Hygiène", cat_paper: "Papier/Divers", cat_pets: "Animaux",
             btn_pay: "PAYER", cafe_title: "☕ Offrez-moi un café",
             cafe_desc: "<strong>SuperMart</strong> est gratuit et sans publicité.", pay_revolut: "💳 Payer par Carte / Google Pay", pay_paypal: "🅿️ Payer avec PayPal",
-            tut_title: "📖 Guide d'utilisation v3.2.1", tut_step1_b: "Avant de sortir:", tut_step1: "Préparez votre liste à la maison.", tut_step2_b: "En magasin:", tut_step2: "Ajustez les prix avec le crayon (✏️).", 
+            tut_title: "📖 Guide d'utilisation v3.2.2", tut_step1_b: "Avant de sortir:", tut_step1: "Préparez votre liste à la maison.", tut_step2_b: "En magasin:", tut_step2: "Ajustez les prix avec le crayon (✏️).", 
             tut_step3_scan_b: "🧾 Nouveauté Scanner:", tut_step3_scan: "Utilisez le bouton flottant 🧾 pour photographier votre reçu en papier. Les prix et produits se placeront automatiquement.",
             tut_step3_b: "Budget:", tut_step3: "Contrôlez la barre de couleur.", tut_step4_b: "Fini:", tut_step4: "Appuyez sur PAYER.", btn_understood: "Compris!",
             calc_title: "🧮 Calculatrice", calc_use: "📋 Utiliser", offer_title: "⚖️ Calculateur d'offre:", price_label: "Prix:", grams_label: "Grammes:", units_label: "Qté:",
@@ -740,7 +753,7 @@
             cat_fruit: "Frutta", cat_veg: "Verdura", cat_meat: "Macelleria", cat_fish: "Pescheria", cat_milk: "Latte", cat_dairy: "Latticini", cat_coldcuts: "Salumi", cat_bread: "Pane/Pasticceria", cat_pantry: "Pasta/Riso/Legumi", cat_eggs: "Uova",
             cat_oils: "Oli", cat_canned: "Conserve", cat_coffee: "Caffè/Cacao", cat_drinks: "Bevande", cat_snacks: "Snack/Dolci", cat_frozen: "Surgelati", cat_cleaning: "Pulizia", cat_hygiene: "Igiene", cat_paper: "Carta/Varie", cat_pets: "Animali",
             btn_pay: "PAGA", cafe_title: "☕ Offrimi un caffè", cafe_desc: "<strong>SuperMart</strong> è gratuita e senza pubblicità.", pay_revolut: "💳 Paga con Carta / Google Pay", pay_paypal: "🅿️ Paga con PayPal",
-            tut_title: "📖 Come usare SuperMart v3.2.1", tut_step1_b: "Prima di uscire:", tut_step1: "Prepara la lista da casa.", tut_step2_b: "Al supermercato:", tut_step2: "Usa la matita (✏️) per impostare il prezzo.", 
+            tut_title: "📖 Come usare SuperMart v3.2.2", tut_step1_b: "Prima di uscire:", tut_step1: "Prepara la lista da casa.", tut_step2_b: "Al supermercato:", tut_step2: "Usa la matita (✏️) per impostare il prezzo.", 
             tut_step3_scan_b: "🧾 Novità Scanner:", tut_step3_scan: "Usa il pulsante galleggiante 🧾 per fotografare lo scontrino cartaceo. Prezzi e prodotti si aggiorneranno automaticamente.",
             tut_step3_b: "Controllo spese:", tut_step3: "La barra indica il budget.", tut_step4_b: "Finito:", tut_step4: "Premi PAGA.", btn_understood: "Capito!",
             calc_title: "🧮 Calcolatrice", calc_use: "📋 Usa", offer_title: "⚖️ Calcolatore Offerta:", price_label: "Prezzo:", grams_label: "Grammi:", units_label: "Qtà:",
@@ -762,7 +775,7 @@
             cat_fruit: "Obst", cat_veg: "Gemüse", cat_meat: "Metzgerei", cat_fish: "Fisch", cat_milk: "Milch", cat_dairy: "Molkerei", cat_coldcuts: "Wurstwaren", cat_bread: "Brot/Gebäck", cat_pantry: "Nudeln/Reis/Bohnen", cat_eggs: "Eier",
             cat_oils: "Öle", cat_canned: "Konserven", cat_coffee: "Kaffee/Kakao", cat_drinks: "Getränke", cat_snacks: "Snacks/Süßes", cat_frozen: "Tiefkühlkost", cat_cleaning: "Reinigung", cat_hygiene: "Hygiene", cat_paper: "Papier/Sonstiges", cat_pets: "Tiere",
             btn_pay: "BEZAHLEN", cafe_title: "☕ Kaufe mir einen Kaffee", cafe_desc: "<strong>SuperMart</strong> ist 100% kostenlos ohne Werbung.", pay_revolut: "💳 Mit Karte / Google Pay zahlen", pay_paypal: "🅿️ Mit PayPal zahlen",
-            tut_title: "📖 Anleitung v3.2.1", tut_step1_b: "Vor dem Einkauf:", tut_step1: "Erstelle deine Liste zu Hause.", tut_step2_b: "Im Laden:", tut_step2: "Ändere den Preis mit dem Stift (✏️).", 
+            tut_title: "📖 Anleitung v3.2.2", tut_step1_b: "Vor dem Einkauf:", tut_step1: "Erstelle deine Liste zu Hause.", tut_step2_b: "Im Laden:", tut_step2: "Ändere den Preis mit dem Stift (✏️).", 
             tut_step3_scan_b: "🧾 Neu Beleg-Scanner:", tut_step3_scan: "Nutze den schwebenden Button 🧾, um deinen Papierbeleg zu fotografieren. Preise und Artikel werden automatisch zugeordnet.",
             tut_step3_b: "Budgetkontrolle:", tut_step3: "Achte auf den Farbbalten.", tut_step4_b: "Fertig:", tut_step4: "Tippe auf BEZAHLEN.", btn_understood: "Verstanden!",
             calc_title: "🧮 Rechner", calc_use: "📋 Nutzen", offer_title: "⚖️ Angebotsrechner:", price_label: "Preis:", grams_label: "Gramm:", units_label: "Menge:",
@@ -784,7 +797,7 @@
             cat_fruit: "Fruta", cat_veg: "Legumes", cat_meat: "Talho", cat_fish: "Peixaria", cat_milk: "Leite", cat_dairy: "Lacticínios", cat_coldcuts: "Charcutaria", cat_bread: "Pão/Pastelaria", cat_pantry: "Massa/Arroz/Legumes", cat_eggs: "Ovos",
             cat_oils: "Óleos", cat_canned: "Conservas", cat_coffee: "Café/Cacau", cat_drinks: "Bebidas", cat_snacks: "Doces/Snacks", cat_frozen: "Congelados", cat_cleaning: "Limpeza", cat_hygiene: "Higiene", cat_paper: "Papel/Vários", cat_pets: "Animais",
             btn_pay: "PAGAR", cafe_title: "☕ Pague-me um café", cafe_desc: "<strong>SuperMart</strong> é 100% gratuito e sem anúncios.", pay_revolut: "💳 Pagar com Cartão / Google Pay", pay_paypal: "🅿️ Pagar com PayPal",
-            tut_title: "📖 Como usar SuperMart v3.2.1", tut_step1_b: "Antes de sair:", tut_step1: "Prepare a lista em casa.", tut_step2_b: "No supermercado:", tut_step2: "Ajuste preços com o lápis (✏️).", 
+            tut_title: "📖 Como usar SuperMart v3.2.2", tut_step1_b: "Antes de sair:", tut_step1: "Prepare a lista em casa.", tut_step2_b: "No supermercado:", tut_step2: "Ajuste preços com o lápis (✏️).", 
             tut_step3_scan_b: "🧾 Novidade Scanner:", tut_step3_scan: "Use o botão flutuante 🧾 para fotografar o seu recibo de papel. Os preços e produtos serão atualizados automaticamente.",
             tut_step3_b: "Controlo de gastos:", tut_step3: "Veja a barra de orçamento.", tut_step4_b: "Ao terminar:", tut_step4: "Toque em PAGAR.", btn_understood: "Entendido!",
             calc_title: "🧮 Calculadora", calc_use: "📋 Usar", offer_title: "⚖️ Calculadora de Oferta:", price_label: "Preço:", grams_label: "Gramas:", units_label: "Qtd:",
@@ -806,13 +819,13 @@
             cat_fruit: "Fruita", cat_veg: "Verdura", cat_meat: "Carnisseria", cat_fish: "Peixateria", cat_milk: "Llet", cat_dairy: "Làctics", cat_coldcuts: "Embotits", cat_bread: "Pa/Forneria", cat_pantry: "Llegums/Pasta/Arròs", cat_eggs: "Ous",
             cat_oils: "Olis", cat_canned: "Conserves", cat_coffee: "Cafè/Cacau", cat_drinks: "Begudes", cat_snacks: "Snacks/Dolços", cat_frozen: "Congelats", cat_cleaning: "Neteja", cat_hygiene: "Higiene", cat_paper: "Paper/Varis", cat_pets: "Mascotes",
             btn_pay: "PAGAR", cafe_title: "☕ Convida'm a un Cafè", cafe_desc: "<strong>SuperMart</strong> és una aplicació 100% gratuïta i sense anuncis.", pay_revolut: "💳 Pagar amb Targeta / Google Pay", pay_paypal: "🅿️ Pagar amb PayPal",
-            tut_title: "📖 Com usar SuperMart v3.2.1", tut_step1_b: "Abans de sortir:", tut_step1: "Prepara la teva llista des de casa.", tut_step2_b: "Al súper:", tut_step2: "Ajusta els preus amb el llapis (✏️).", 
+            tut_title: "📖 Com usar SuperMart v3.2.2", tut_step1_b: "Abans de sortir:", tut_step1: "Prepara la teva llista des de casa.", tut_step2_b: "Al súper:", tut_step2: "Ajusta els preus amb el llapis (✏️).", 
             tut_step3_scan_b: "🧾 Novetat Escàner:", tut_step3_scan: "Fes servir el botó flotant 🧾 per fotografiar el teu tiquet de paper. Els preus i productes es col·locaran automàticament.",
             tut_step3_b: "Control de despesa:", tut_step3: "El semàfor t'avisarà del pressupost.", tut_step4_b: "En acabar:", tut_step4: "Prem PAGAR.", btn_understood: "Entès!",
             calc_title: "🧮 Calculadora", calc_use: "📋 Usar", offer_title: "⚖️ Calculador d'Oferta:", price_label: "Preu:", grams_label: "Grams:", units_label: "Uts:",
             frequents_sub: "⚡ Productes Freqüents:", add_product_sub: "📝 Apuntar Producte:", name_ph: "Nom", price_ph: "Preu €", btn_save_list: "Guardar a la Llista",
             cart_title: "🛒 Productes a la Cistella", btn_share_cart: "Compartir per WhatsApp", hist_title: "📜 Historial de Compres", settings_title: "⚙️ Configuració",
-            lang_select_label: "🌐 Idioma de l'Aplicació:", budget_limit_label: "Límit de Pressupost (€):", btn_save_limit: "Guardar Límit", btn_buy_coffee: "☕ Convida'm a un cafè", btn_view_hist: "📜 Veure Historial Guardat", danger_zone: "⚠️ ZONA DE PERILL", btn_clear_hist: "Esborrar Historial Complet", switch_aisles_label: "🛒 Ordenar per Passadissos:", sync_title: "📱 Sincronització Dispositius:", btn_copy_key: "Copiar Clau", btn_link_device: "Vincular Mòbil", btn_unlink_dispositivo: "Desvincular Dispositiu",
+            lang_select_label: "🌐 Idioma de l'Aplicació:", budget_limit_label: "Límit de Pressupost (€):", btn_save_limit: "Guardar Límit", btn_buy_coffee: "☕ Convida'm a un cafè", btn_view_hist: "📜 Veure Historial Guardat", danger_zone: "⚠️ ZONA DE PERILL", btn_clear_hist: "Esborrar Historial Complet", switch_aisles_label: "🛒 Ordenar per Passadissos:", sync_title: "📱 Sincronització Dispositius:", btn_copy_key: "Copiar Clau", btn_link_device: "Vincular Mòbil", btn_unlink_device: "Desvincular Dispositiu",
             zone_entrance: "Zona 1: Entrada i Frescos", zone_dry: "Zona 2: Passadissos Secs", zone_cold: "Zona 3: Murals de Fred i Carna", zone_home: "Zona 4: Neteja", zone_checkout: "Zona 5: Sortida i Congelats",
             scanner_title: "Escàner de tiquets", scanner_sub: "Escaneja el teu tiquet de paper després de comprar. Si és llarg, fes-li diverses fotos.",
             btn_photo_ticket: "Toca per fotografiar tiquet", photo_tip: "Apropa la càmera per a més nitidesa", ocr_local_tip: "Processat localment al teu mòbil",
@@ -834,7 +847,7 @@
             t = i18n[langKey];
             localStorage.setItem('supermart_lang', langKey);
             aplicarTraducciones();
-            actualizar();
+            actualizar(true);
             if(categoriaActiva) renderFrecuentes();
         }
     }
@@ -868,12 +881,16 @@
         });
     }
 
-    function guardarDatosDB(clave, valor) {
+    function guardarSoloLocalDB(clave, valor) {
         localStorage.setItem(clave, typeof valor === 'object' ? JSON.stringify(valor) : valor);
-        if (window.sincronizarCloud) { window.sincronizarCloud(clave, valor); }
         if (!db) return;
         const tx = db.transaction('app_data', 'readwrite');
         tx.objectStore('app_data').put(valor, clave);
+    }
+
+    function guardarDatosDB(clave, valor) {
+        guardarSoloLocalDB(clave, valor);
+        if (window.sincronizarCloud) { window.sincronizarCloud(clave, valor); }
     }
 
     function obtenerDatoDB(clave) {
@@ -886,7 +903,6 @@
         });
     }
 
-    // Estructura de productos base con IDs para traducción dinámica multilenguaje
     const frecuentesBase = {
         'Fruta': [
             { id_prod: 'prod_apples', nombre: 'Manzanas', precio: 2.20, enCasa: false },
@@ -970,7 +986,7 @@
             if (tabs) tabs.style.display = 'flex';
             if (pasillos) pasillos.style.display = 'none';
         }
-        actualizar();
+        actualizar(true);
     }
 
     function setU(n, btn) {
@@ -990,7 +1006,6 @@
         document.getElementById('p' + n).classList.add('active');
     }
 
-    // Avisos diferenciados por color: 'exito' (verde) para carro, 'info' (azul) para listas/configuración
     function mostrarToast(msg, tipo = 'exito') {
         const t = document.getElementById('toast');
         t.innerText = msg;
@@ -1078,9 +1093,13 @@
 
     function calcularTotal() { return carroActual.reduce((acc, item) => acc + (parseFloat(item.total) || 0), 0); }
 
-    function actualizar() {
+    function actualizar(soloLocal = false) {
         const total = calcularTotal();
-        guardarDatosDB('carro_temp', carroActual);
+        if (soloLocal) {
+            guardarSoloLocalDB('carro_temp', carroActual);
+        } else {
+            guardarDatosDB('carro_temp', carroActual);
+        }
 
         document.getElementById('total').innerText = total.toFixed(2) + '€';
         document.getElementById('status').innerText = `${t.budget_limit_label.replace(' (€):', '') || 'Límite'}: ${limitePresupuesto.toFixed(2)}€`;
@@ -1272,7 +1291,6 @@
             return;
         }
 
-        // Si se edita manualmente el nombre, eliminamos la clave id_prod para fijar el texto del usuario
         delete prod.id_prod;
         prod.nombre = nuevoNombre.trim();
         prod.precio = nuevoPrecio;
@@ -1305,7 +1323,6 @@
         if (isNaN(precio) || precio < 0) precio = 0.00;
 
         if(!habituales[categoriaActiva]) habituales[categoriaActiva] = [];
-        // Guardamos el producto nuevo personalizado sin clave id_prod
         habituales[categoriaActiva].push({ nombre: nombre, precio: precio, enCasa: false });
         
         guardarDatosDB('habituales_v130', habituales);
@@ -1591,6 +1608,15 @@
         document.getElementById(id).classList.add('active');
     }
 
+    function confirmarTutorial() {
+        localStorage.setItem('tutorial_visto', 'true');
+        if (db) {
+            const tx = db.transaction('app_data', 'readwrite');
+            tx.objectStore('app_data').put(true, 'tutorial_visto');
+        }
+        cerrarModal('modal-tutorial');
+    }
+
     function abrirHistorialDirecto() {
         cerrarModal('modal-ajustes');
         abrirModal('modal-historial');
@@ -1770,8 +1796,26 @@
     function vincularOtraClave() {
         const nuevaClave = prompt("Pega la clave supermart_uid del otro móvil para vincular:");
         if(nuevaClave && nuevaClave.trim().length > 5) {
+            // 1. Guardamos nueva clave y activamos escudo anti-sobrescritura
             localStorage.setItem('supermart_uid', nuevaClave.trim());
-            alert("✅ Móvil vinculado con éxito. Reiniciando datos desde la nube...");
+            localStorage.setItem('supermart_vinculando', 'true');
+
+            // 2. Vaciamos datos locales anteriores para recibir limpios los del anfitrión
+            localStorage.removeItem('carro_temp');
+            localStorage.removeItem('habituales_v130');
+            localStorage.removeItem('compras_detalladas_v150');
+
+            if (db) {
+                try {
+                    const tx = db.transaction('app_data', 'readwrite');
+                    const store = tx.objectStore('app_data');
+                    store.delete('carro_temp');
+                    store.delete('habituales_v130');
+                    store.delete('compras_detalladas_v150');
+                } catch (e) {}
+            }
+
+            alert("✅ Móvil vinculado con éxito. Descargando lista compartida desde la nube...");
             location.reload();
         }
     }
@@ -1779,6 +1823,7 @@
     function desvincularDispositivo() {
         if(confirm(langKey === 'es' ? "¿Quieres desvincular este dispositivo?\nSe generará una clave UID totalmente nueva e independiente." : "Unlink this device?\nA completely new independent UID key will be generated.")) {
             localStorage.removeItem('supermart_uid');
+            localStorage.removeItem('supermart_vinculando');
             alert("🔄 Dispositivo desvinculado. Reiniciando app para generar un nuevo código único...");
             location.reload();
         }
@@ -1786,35 +1831,42 @@
 
     async function cargarDatosIniciales() {
         aplicarTraducciones();
-        if(window.restaurarNube) { window.restaurarNube(); }
-        try {
-            await iniciarIndexedDB();
-            const dbHabituales = await obtenerDatoDB('habituales_v130');
-            const dbLimite = await obtenerDatoDB('limite_v110');
-            const dbCarro = await obtenerDatoDB('carro_temp');
-            const dbHistorial = await obtenerDatoDB('compras_detalladas_v150');
-            const dbPasillos = await obtenerDatoDB('modo_pasillos_v270');
+        const vinculandoAhora = localStorage.getItem('supermart_vinculando') === 'true';
 
-            habituales = dbHabituales || JSON.parse(localStorage.getItem('habituales_v130')) || frecuentesBase;
-            limitePresupuesto = dbLimite || parseFloat(localStorage.getItem('limite_v110')) || 150;
-            carroActual = dbCarro || JSON.parse(localStorage.getItem('carro_temp')) || [];
-            historialCompras = dbHistorial || JSON.parse(localStorage.getItem('compras_detalladas_v150')) || [];
-            modoPasillos = dbPasillos !== null ? dbPasillos : (localStorage.getItem('modo_pasillos_v270') === 'true');
-        } catch (e) {
-            habituales = JSON.parse(localStorage.getItem('habituales_v130')) || frecuentesBase;
-            limitePresupuesto = parseFloat(localStorage.getItem('limite_v110')) || 150;
-            carroActual = JSON.parse(localStorage.getItem('carro_temp')) || [];
-            historialCompras = JSON.parse(localStorage.getItem('compras_detalladas_v150')) || [];
-            modoPasillos = localStorage.getItem('modo_pasillos_v270') === 'true';
+        if (!vinculandoAhora) {
+            try {
+                await iniciarIndexedDB();
+                const dbHabituales = await obtenerDatoDB('habituales_v130');
+                const dbLimite = await obtenerDatoDB('limite_v110');
+                const dbCarro = await obtenerDatoDB('carro_temp');
+                const dbHistorial = await obtenerDatoDB('compras_detalladas_v150');
+                const dbPasillos = await obtenerDatoDB('modo_pasillos_v270');
+
+                habituales = dbHabituales || JSON.parse(localStorage.getItem('habituales_v130')) || frecuentesBase;
+                limitePresupuesto = dbLimite || parseFloat(localStorage.getItem('limite_v110')) || 150;
+                carroActual = dbCarro || JSON.parse(localStorage.getItem('carro_temp')) || [];
+                historialCompras = dbHistorial || JSON.parse(localStorage.getItem('compras_detalladas_v150')) || [];
+                modoPasillos = dbPasillos !== null ? dbPasillos : (localStorage.getItem('modo_pasillos_v270') === 'true');
+            } catch (e) {
+                habituales = JSON.parse(localStorage.getItem('habituales_v130')) || frecuentesBase;
+                limitePresupuesto = parseFloat(localStorage.getItem('limite_v110')) || 150;
+                carroActual = JSON.parse(localStorage.getItem('carro_temp')) || [];
+                historialCompras = JSON.parse(localStorage.getItem('compras_detalladas_v150')) || [];
+                modoPasillos = localStorage.getItem('modo_pasillos_v270') === 'true';
+            }
+        } else {
+            await iniciarIndexedDB();
+            carroActual = [];
         }
+
+        if(window.restaurarNube) { window.restaurarNube(); }
 
         if(!localStorage.getItem('tutorial_visto')) {
             abrirModal('modal-tutorial');
-            localStorage.setItem('tutorial_visto', 'true');
         }
 
         aplicarModoVista();
-        actualizar();
+        actualizar(true);
     }
 
     if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(() => {}); }
