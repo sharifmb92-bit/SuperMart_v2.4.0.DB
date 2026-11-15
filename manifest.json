@@ -1,35 +1,31 @@
 {
-  "id": "supermart-control-gasto-familiar",
-  "name": "SuperMart",
+  "name": "SuperMart - Control de Gasto Familiar",
   "short_name": "SuperMart",
-  "description": "Control de gastos y gestión práctica de la compra familiar en supermercados.",
+  "description": "Calculadora inteligente de supermercado, escáner OCR de tickets y lista compartida en tiempo real.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#6F4E37",
   "theme_color": "#6F4E37",
-  "categories": ["shopping", "finance"],
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "./icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Pantalla principal de SuperMart"
     }
   ]
 }
