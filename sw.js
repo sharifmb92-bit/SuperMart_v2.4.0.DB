@@ -1,32 +1,30 @@
-const CACHE_NAME = 'supermart-v3-1-1';
+const CACHE_NAME = 'supermart-v3-2-2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+  './icon-152.png'
 ];
 
-// 1. Instalación: guardar recursos para uso sin conexión
+// Instalación y precarga de recursos estáticos
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return Promise.all(
-        ASSETS_TO_CACHE.map((url) => cache.add(new Request(url, { cache: 'reload' })))
-      );
-    }).then(() => self.skipWaiting())
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
   );
 });
 
-// 2. Activación: borrar cachés antiguas
+// Activación y limpieza inmediata de cachés anteriores
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
           }
         })
       );
@@ -34,28 +32,32 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Peticiones: primero internet, y si no hay conexión, lo guardado
+// Estrategia Network-First con respaldo offline
 self.addEventListener('fetch', (event) => {
-  if (event.request.url.includes('firestore.googleapis.com') ||
-      event.request.url.includes('firebase') ||
-      event.request.method !== 'GET') {
+  if (event.request.method !== 'GET') return;
+
+  // Ignorar peticiones de Firebase Firestore para no interferir con la sincronización en vivo
+  if (event.request.url.includes('firestore.googleapis.com')) {
     return;
   }
 
   event.respondWith(
     fetch(event.request)
-      .then((response) => {
-        if (response && response.status === 200) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && event.request.url.startsWith(self.location.origin)) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
         }
-        return response;
+        return networkResponse;
       })
       .catch(() => {
-        return caches.match(event.request).then((cached) => {
-          if (cached) return cached;
-          const accept = event.request.headers.get('accept') || '';
-          if (accept.includes('text/html')) {
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          if (event.request.mode === 'navigate') {
             return caches.match('./index.html');
           }
         });
