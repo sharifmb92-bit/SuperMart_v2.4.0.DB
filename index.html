@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SuperMart_v 3.2.0</title>
+    <title>SuperMart_v 3.2.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- PWA -->
@@ -328,7 +328,7 @@
 <div class="modal" id="modal-tutorial">
     <div class="modal-contenido">
         <div class="modal-header">
-            <h3 style="margin:0;" data-i18n="tut_title">📖 Cómo usar SuperMart v3.2.0</h3>
+            <h3 style="margin:0;" data-i18n="tut_title">📖 Cómo usar SuperMart v3.2.1</h3>
             <button class="btn-mini" onclick="cerrarModal('modal-tutorial')">✕</button>
         </div>
         <div style="font-size:13px; line-height:1.6;">
@@ -600,7 +600,7 @@
         }
 
         const VER_KEY = 'supermart_version_instalada';
-        const VERSION_ACTUAL = '3.2.0_clean';
+        const VERSION_ACTUAL = '3.2.1_clean';
 
         if (localStorage.getItem(VER_KEY) !== VERSION_ACTUAL) {
             if ('caches' in window) {
@@ -654,7 +654,7 @@
             btn_pay: "PAGAR", cafe_title: "☕ Invítame a un Café",
             cafe_desc: "<strong>SuperMart</strong> es una aplicación 100% gratuita y libre de anuncios.<br><br>Si te resulta útil para gestionar tus compras diarias, puedes hacer una pequeña aportación. Puedes pagar con <strong>tarjeta normal, Google Pay o PayPal</strong> de forma rápida y segura.",
             pay_revolut: "💳 Pagar con Tarjeta o Google Pay (Revolut)", pay_paypal: "🅿️ Pagar con PayPal",
-            tut_title: "📖 Cómo usar SuperMart v3.2.0",
+            tut_title: "📖 Cómo usar SuperMart v3.2.1",
             tut_step1_b: "Antes de salir:", tut_step1: "Abre la app y entra en cada categoría. Guarda lo que necesitas comprando o apuntando nuevos productos (incluso con 0.00€ para apuntarlo desde casa).",
             tut_step2_b: "En el súper:", tut_step2: "Si un producto tiene 0.00€ o ha cambiado de precio, toca el lápiz (✏️) para poner su valor real antes de añadirlo al carro.",
             tut_step3_scan_b: "🧾 Novedad Escáner:", tut_step3_scan: "Usa el botón flotante 🧾 para fotografiar tu recibo de papel tras comprar. Los precios y productos se colocarán en sus tarjetas solas.",
@@ -672,7 +672,12 @@
             zone_entrance: "Zona 1: Entrada y Frescos", zone_dry: "Zona 2: Pasillos Secos (Despensa)", zone_cold: "Zona 3: Murales de Frío & Carnes", zone_home: "Zona 4: Droguería y Cuidado Personal", zone_checkout: "Zona 5: Salida & Congelados",
             scanner_title: "Escáner de Tickets de Compra", scanner_sub: "Escanea tu recibo de papel tras comprar. Si el ticket es largo, puedes fotografiarlo por tramos con el botón de añadir fotos.",
             btn_photo_ticket: "Toca para fotografiar ticket", photo_tip: "Acerca la cámara para asegurar lectura nítida", ocr_local_tip: "Procesando localmente en tu móvil",
-            acc_items_title: "Productos Acumulados:", btn_add_more_photos: "📸 Añadir otro tramo del ticket", btn_cancel: "Cancelar", btn_import_app: "¡Importar A la App!"
+            acc_items_title: "Productos Acumulados:", btn_add_more_photos: "📸 Añadir otro tramo del ticket", btn_cancel: "Cancelar", btn_import_app: "¡Importar A la App!",
+            /* Traducciones dinámicas de productos frecuentes base */
+            prod_apples: "Manzanas", prod_bananas: "Plátanos", prod_tomatoes: "Tomates", prod_lettuce: "Lechuga",
+            prod_chicken_breast: "Pechuga Pollo", prod_minced_meat: "Carne Picada", prod_detergent: "Detergente",
+            prod_floor_cleaner: "Fregasuelos", prod_pack_milk: "Pack Leche 6L", prod_liter_milk: "Litro Leche",
+            prod_lentils_can: "Lentejas Bote", prod_chickpeas: "Garbanzos", prod_olives_can: "Aceitunas Bote", prod_tuna_can: "Lata Atún"
         },
         en: {
             btn_cart: "Cart", search_ph: "🔍 Type product (e.g. butter, tomato)...", app_heading: "Family Expenses",
@@ -682,7 +687,7 @@
             btn_pay: "CHECKOUT", cafe_title: "☕ Buy me a Coffee",
             cafe_desc: "<strong>SuperMart</strong> is 100% free with no ads.<br><br>Support the app with card, Google Pay or PayPal.",
             pay_revolut: "💳 Pay with Card or Google Pay (Revolut)", pay_paypal: "🅿️ Pay with PayPal",
-            tut_title: "📖 How to use SuperMart v3.2.0",
+            tut_title: "📖 How to use SuperMart v3.2.1",
             tut_step1_b: "Before shopping:", tut_step1: "Open the app and check each category. Add items to your list at home even at €0.00.",
             tut_step2_b: "At the store:", tut_step2: "Tap the pencil (✏️) to set exact prices before adding items to your cart.",
             tut_step3_scan_b: "🧾 New Receipt Scanner:", tut_step3_scan: "Use the floating button 🧾 to photograph your paper receipt after shopping. Prices and items will automatically update in your cards.",
@@ -700,7 +705,11 @@
             zone_entrance: "Zone 1: Entrance & Fresh", zone_dry: "Zone 2: Dry Aisles", zone_cold: "Zone 3: Cold & Meats", zone_home: "Zone 4: Cleaning & Care", zone_checkout: "Zone 5: Checkout & Frozen",
             scanner_title: "Receipt Scanner", scanner_sub: "Scan your paper receipt after shopping. If it's long, capture it in multiple photos.",
             btn_photo_ticket: "Tap to photograph receipt", photo_tip: "Hold camera close for sharp focus", ocr_local_tip: "Processed locally on your device",
-            acc_items_title: "Detected Items:", btn_add_more_photos: "📸 Add another section of receipt", btn_cancel: "Cancel", btn_import_app: "Import To App!"
+            acc_items_title: "Detected Items:", btn_add_more_photos: "📸 Add another section of receipt", btn_cancel: "Cancel", btn_import_app: "Import To App!",
+            prod_apples: "Apples", prod_bananas: "Bananas", prod_tomatoes: "Tomatoes", prod_lettuce: "Lettuce",
+            prod_chicken_breast: "Chicken Breast", prod_minced_meat: "Minced Meat", prod_detergent: "Laundry Detergent",
+            prod_floor_cleaner: "Floor Cleaner", prod_pack_milk: "Milk Pack 6L", prod_liter_milk: "Liter Milk",
+            prod_lentils_can: "Canned Lentils", prod_chickpeas: "Chickpeas", prod_olives_can: "Canned Olives", prod_tuna_can: "Canned Tuna"
         },
         fr: {
             btn_cart: "Panier", search_ph: "🔍 Écrire un produit...", app_heading: "Dépenses Familiales",
@@ -709,7 +718,7 @@
             cat_oils: "Huiles", cat_canned: "Conserves", cat_coffee: "Café/Cacao", cat_drinks: "Boissons", cat_snacks: "Snacks/Friandises", cat_frozen: "Surgelés", cat_cleaning: "Nettoyage", cat_hygiene: "Hygiène", cat_paper: "Papier/Divers", cat_pets: "Animaux",
             btn_pay: "PAYER", cafe_title: "☕ Offrez-moi un café",
             cafe_desc: "<strong>SuperMart</strong> est gratuit et sans publicité.", pay_revolut: "💳 Payer par Carte / Google Pay", pay_paypal: "🅿️ Payer avec PayPal",
-            tut_title: "📖 Guide d'utilisation v3.2.0", tut_step1_b: "Avant de sortir:", tut_step1: "Préparez votre liste à la maison.", tut_step2_b: "En magasin:", tut_step2: "Ajustez les prix avec le crayon (✏️).", 
+            tut_title: "📖 Guide d'utilisation v3.2.1", tut_step1_b: "Avant de sortir:", tut_step1: "Préparez votre liste à la maison.", tut_step2_b: "En magasin:", tut_step2: "Ajustez les prix avec le crayon (✏️).", 
             tut_step3_scan_b: "🧾 Nouveauté Scanner:", tut_step3_scan: "Utilisez le bouton flottant 🧾 pour photographier votre reçu en papier. Les prix et produits se placeront automatiquement.",
             tut_step3_b: "Budget:", tut_step3: "Contrôlez la barre de couleur.", tut_step4_b: "Fini:", tut_step4: "Appuyez sur PAYER.", btn_understood: "Compris!",
             calc_title: "🧮 Calculatrice", calc_use: "📋 Utiliser", offer_title: "⚖️ Calculateur d'offre:", price_label: "Prix:", grams_label: "Grammes:", units_label: "Qté:",
@@ -719,7 +728,11 @@
             zone_entrance: "Zone 1: Entrée & Frais", zone_dry: "Zone 2: Épicerie", zone_cold: "Zone 3: Froid & Viandes", zone_home: "Zone 4: Entretien", zone_checkout: "Zone 5: Caisse & Surgelés",
             scanner_title: "Scanner de reçus", scanner_sub: "Scannez votre reçu après vos achats. S'il est long, prenez-le en plusieurs photos.",
             btn_photo_ticket: "Toucher pour photographier", photo_tip: "Rapprochez l'appareil pour plus de netteté", ocr_local_tip: "Traité localement sur votre téléphone",
-            acc_items_title: "Produits Détectés:", btn_add_more_photos: "📸 Ajouter une autre section du reçu", btn_cancel: "Annuler", btn_import_app: "Importer Dans L'App!"
+            acc_items_title: "Produits Détectés:", btn_add_more_photos: "📸 Ajouter une autre section du reçu", btn_cancel: "Annuler", btn_import_app: "Importer Dans L'App!",
+            prod_apples: "Pommes", prod_bananas: "Bananes", prod_tomatoes: "Tomates", prod_lettuce: "Laitue",
+            prod_chicken_breast: "Blanc de Poulet", prod_minced_meat: "Viande Hachée", prod_detergent: "Lessive",
+            prod_floor_cleaner: "Nettoyant Sol", prod_pack_milk: "Pack de Lait 6L", prod_liter_milk: "Litre de Lait",
+            prod_lentils_can: "Lentilles en Boîte", prod_chickpeas: "Pois Chiches", prod_olives_can: "Olives en Boîte", prod_tuna_can: "Thon en Boîte"
         },
         it: {
             btn_cart: "Carrello", search_ph: "🔍 Scrivi prodotto...", app_heading: "Spese Familiari",
@@ -727,7 +740,7 @@
             cat_fruit: "Frutta", cat_veg: "Verdura", cat_meat: "Macelleria", cat_fish: "Pescheria", cat_milk: "Latte", cat_dairy: "Latticini", cat_coldcuts: "Salumi", cat_bread: "Pane/Pasticceria", cat_pantry: "Pasta/Riso/Legumi", cat_eggs: "Uova",
             cat_oils: "Oli", cat_canned: "Conserve", cat_coffee: "Caffè/Cacao", cat_drinks: "Bevande", cat_snacks: "Snack/Dolci", cat_frozen: "Surgelati", cat_cleaning: "Pulizia", cat_hygiene: "Igiene", cat_paper: "Carta/Varie", cat_pets: "Animali",
             btn_pay: "PAGA", cafe_title: "☕ Offrimi un caffè", cafe_desc: "<strong>SuperMart</strong> è gratuita e senza pubblicità.", pay_revolut: "💳 Paga con Carta / Google Pay", pay_paypal: "🅿️ Paga con PayPal",
-            tut_title: "📖 Come usare SuperMart v3.2.0", tut_step1_b: "Prima di uscire:", tut_step1: "Prepara la lista da casa.", tut_step2_b: "Al supermercato:", tut_step2: "Usa la matita (✏️) per impostare il prezzo.", 
+            tut_title: "📖 Come usare SuperMart v3.2.1", tut_step1_b: "Prima di uscire:", tut_step1: "Prepara la lista da casa.", tut_step2_b: "Al supermercato:", tut_step2: "Usa la matita (✏️) per impostare il prezzo.", 
             tut_step3_scan_b: "🧾 Novità Scanner:", tut_step3_scan: "Usa il pulsante galleggiante 🧾 per fotografare lo scontrino cartaceo. Prezzi e prodotti si aggiorneranno automaticamente.",
             tut_step3_b: "Controllo spese:", tut_step3: "La barra indica il budget.", tut_step4_b: "Finito:", tut_step4: "Premi PAGA.", btn_understood: "Capito!",
             calc_title: "🧮 Calcolatrice", calc_use: "📋 Usa", offer_title: "⚖️ Calcolatore Offerta:", price_label: "Prezzo:", grams_label: "Grammi:", units_label: "Qtà:",
@@ -737,7 +750,11 @@
             zone_entrance: "Zona 1: Ingresso e Freschi", zone_dry: "Zona 2: Corsie Secche", zone_cold: "Zona 3: Freddo e Carne", zone_home: "Zona 4: Pulizia", zone_checkout: "Zona 5: Uscita e Surgelati",
             scanner_title: "Scanner scontrini", scanner_sub: "Scansiona lo scontrino cartaceo dopo la spesa. Se è lungo, scatta più foto.",
             btn_photo_ticket: "Tocca per fotografare scontrino", photo_tip: "Avvicina la fotocamera per mettere a fuoco", ocr_local_tip: "Elaborato localmente sul telefono",
-            acc_items_title: "Prodotti Rilevati:", btn_add_more_photos: "📸 Aggiungi altra foto dello scontrino", btn_cancel: "Annulla", btn_import_app: "Importa Nell'App!"
+            acc_items_title: "Prodotti Rilevati:", btn_add_more_photos: "📸 Aggiungi altra foto dello scontrino", btn_cancel: "Annulla", btn_import_app: "Importa Nell'App!",
+            prod_apples: "Mele", prod_bananas: "Banane", prod_tomatoes: "Pomodori", prod_lettuce: "Lattuga",
+            prod_chicken_breast: "Petto di Pollo", prod_minced_meat: "Carne Macinata", prod_detergent: "Detersivo",
+            prod_floor_cleaner: "Lavapavimenti", prod_pack_milk: "Confezione Latte 6L", prod_liter_milk: "Litro di Latte",
+            prod_lentils_can: "Lenticchie in Scatola", prod_chickpeas: "Ceci", prod_olives_can: "Olive in Vaso", prod_tuna_can: "Tonno in Scatola"
         },
         de: {
             btn_cart: "Warenkorb", search_ph: "🔍 Produkt eingeben...", app_heading: "Familienausgaben",
@@ -745,7 +762,7 @@
             cat_fruit: "Obst", cat_veg: "Gemüse", cat_meat: "Metzgerei", cat_fish: "Fisch", cat_milk: "Milch", cat_dairy: "Molkerei", cat_coldcuts: "Wurstwaren", cat_bread: "Brot/Gebäck", cat_pantry: "Nudeln/Reis/Bohnen", cat_eggs: "Eier",
             cat_oils: "Öle", cat_canned: "Konserven", cat_coffee: "Kaffee/Kakao", cat_drinks: "Getränke", cat_snacks: "Snacks/Süßes", cat_frozen: "Tiefkühlkost", cat_cleaning: "Reinigung", cat_hygiene: "Hygiene", cat_paper: "Papier/Sonstiges", cat_pets: "Tiere",
             btn_pay: "BEZAHLEN", cafe_title: "☕ Kaufe mir einen Kaffee", cafe_desc: "<strong>SuperMart</strong> ist 100% kostenlos ohne Werbung.", pay_revolut: "💳 Mit Karte / Google Pay zahlen", pay_paypal: "🅿️ Mit PayPal zahlen",
-            tut_title: "📖 Anleitung v3.2.0", tut_step1_b: "Vor dem Einkauf:", tut_step1: "Erstelle deine Liste zu Hause.", tut_step2_b: "Im Laden:", tut_step2: "Ändere den Preis mit dem Stift (✏️).", 
+            tut_title: "📖 Anleitung v3.2.1", tut_step1_b: "Vor dem Einkauf:", tut_step1: "Erstelle deine Liste zu Hause.", tut_step2_b: "Im Laden:", tut_step2: "Ändere den Preis mit dem Stift (✏️).", 
             tut_step3_scan_b: "🧾 Neu Beleg-Scanner:", tut_step3_scan: "Nutze den schwebenden Button 🧾, um deinen Papierbeleg zu fotografieren. Preise und Artikel werden automatisch zugeordnet.",
             tut_step3_b: "Budgetkontrolle:", tut_step3: "Achte auf den Farbbalten.", tut_step4_b: "Fertig:", tut_step4: "Tippe auf BEZAHLEN.", btn_understood: "Verstanden!",
             calc_title: "🧮 Rechner", calc_use: "📋 Nutzen", offer_title: "⚖️ Angebotsrechner:", price_label: "Preis:", grams_label: "Gramm:", units_label: "Menge:",
@@ -755,7 +772,11 @@
             zone_entrance: "Zone 1: Eingang & Frische", zone_dry: "Zone 2: Vorratskammer", zone_cold: "Zone 3: Kühlung & Fleisch", zone_home: "Zone 4: Reinigung", zone_checkout: "Zone 5: Kasse & Tiefkühl",
             scanner_title: "Beleg-Scanner", scanner_sub: "Scanne deinen Papierbeleg nach dem Einkauf. Wenn er lang ist, mache mehere Fotos.",
             btn_photo_ticket: "Tippen zum Fotografieren", photo_tip: "Kamera nah halten für Schärfe", ocr_local_tip: "Lokal auf dem Handy verarbeitet",
-            acc_items_title: "Erkannte Artikel:", btn_add_more_photos: "📸 Weitern Teil des Belegs hinzufügen", btn_cancel: "Abbrechen", btn_import_app: "In App Importieren!"
+            acc_items_title: "Erkannte Artikel:", btn_add_more_photos: "📸 Weitern Teil des Belegs hinzufügen", btn_cancel: "Abbrechen", btn_import_app: "In App Importieren!",
+            prod_apples: "Äpfel", prod_bananas: "Bananen", prod_tomatoes: "Tomaten", prod_lettuce: "Salat",
+            prod_chicken_breast: "Hähnchenbrust", prod_minced_meat: "Hackfleisch", prod_detergent: "Waschmittel",
+            prod_floor_cleaner: "Bodenreiniger", prod_pack_milk: "Milch 6L Pack", prod_liter_milk: "Liter Milch",
+            prod_lentils_can: "Linsen Dose", prod_chickpeas: "Kichererbsen", prod_olives_can: "Oliven Glas", prod_tuna_can: "Thunfisch Dose"
         },
         pt: {
             btn_cart: "Carrinho", search_ph: "🔍 Digite o produto...", app_heading: "Despesas Familiares",
@@ -763,7 +784,7 @@
             cat_fruit: "Fruta", cat_veg: "Legumes", cat_meat: "Talho", cat_fish: "Peixaria", cat_milk: "Leite", cat_dairy: "Lacticínios", cat_coldcuts: "Charcutaria", cat_bread: "Pão/Pastelaria", cat_pantry: "Massa/Arroz/Legumes", cat_eggs: "Ovos",
             cat_oils: "Óleos", cat_canned: "Conservas", cat_coffee: "Café/Cacau", cat_drinks: "Bebidas", cat_snacks: "Doces/Snacks", cat_frozen: "Congelados", cat_cleaning: "Limpeza", cat_hygiene: "Higiene", cat_paper: "Papel/Vários", cat_pets: "Animais",
             btn_pay: "PAGAR", cafe_title: "☕ Pague-me um café", cafe_desc: "<strong>SuperMart</strong> é 100% gratuito e sem anúncios.", pay_revolut: "💳 Pagar com Cartão / Google Pay", pay_paypal: "🅿️ Pagar com PayPal",
-            tut_title: "📖 Como usar SuperMart v3.2.0", tut_step1_b: "Antes de sair:", tut_step1: "Prepare a lista em casa.", tut_step2_b: "No supermercado:", tut_step2: "Ajuste preços com o lápis (✏️).", 
+            tut_title: "📖 Como usar SuperMart v3.2.1", tut_step1_b: "Antes de sair:", tut_step1: "Prepare a lista em casa.", tut_step2_b: "No supermercado:", tut_step2: "Ajuste preços com o lápis (✏️).", 
             tut_step3_scan_b: "🧾 Novidade Scanner:", tut_step3_scan: "Use o botão flutuante 🧾 para fotografar o seu recibo de papel. Os preços e produtos serão atualizados automaticamente.",
             tut_step3_b: "Controlo de gastos:", tut_step3: "Veja a barra de orçamento.", tut_step4_b: "Ao terminar:", tut_step4: "Toque em PAGAR.", btn_understood: "Entendido!",
             calc_title: "🧮 Calculadora", calc_use: "📋 Usar", offer_title: "⚖️ Calculadora de Oferta:", price_label: "Preço:", grams_label: "Gramas:", units_label: "Qtd:",
@@ -773,7 +794,11 @@
             zone_entrance: "Zona 1: Entrada e Frescos", zone_dry: "Zona 2: Corredores Secos", zone_cold: "Zona 3: Frio e Carnes", zone_home: "Zona 4: Limpeza", zone_checkout: "Zona 5: Saída e Congelados",
             scanner_title: "Scanner de recibos", scanner_sub: "Digitalize o recibo de papel após a compra. Se for longo, tire várias fotos.",
             btn_photo_ticket: "Toque para fotografar recibo", photo_tip: "Aproxime a câmara para focar", ocr_local_tip: "Processado localmente no telemóvel",
-            acc_items_title: "Produtos Detetados:", btn_add_more_photos: "📸 Adicionar outra secção do recibo", btn_cancel: "Cancelar", btn_import_app: "Importar Para A App!"
+            acc_items_title: "Produtos Detetados:", btn_add_more_photos: "📸 Adicionar outra secção do recibo", btn_cancel: "Cancelar", btn_import_app: "Importar Para A App!",
+            prod_apples: "Maçãs", prod_bananas: "Bananas", prod_tomatoes: "Tomates", prod_lettuce: "Alface",
+            prod_chicken_breast: "Peito de Frango", prod_minced_meat: "Carne Picada", prod_detergent: "Detergente",
+            prod_floor_cleaner: "Detergente de Chão", prod_pack_milk: "Pack de Leite 6L", prod_liter_milk: "Litro de Leite",
+            prod_lentils_can: "Lentilhas em Lata", prod_chickpeas: "Grão de Bico", prod_olives_can: "Azeitonas em Frasco", prod_tuna_can: "Atum em Lata"
         },
         ca: {
             btn_cart: "Cistella", search_ph: "🔍 Escriu un producte...", app_heading: "Despesa Familiar",
@@ -781,7 +806,7 @@
             cat_fruit: "Fruita", cat_veg: "Verdura", cat_meat: "Carnisseria", cat_fish: "Peixateria", cat_milk: "Llet", cat_dairy: "Làctics", cat_coldcuts: "Embotits", cat_bread: "Pa/Forneria", cat_pantry: "Llegums/Pasta/Arròs", cat_eggs: "Ous",
             cat_oils: "Olis", cat_canned: "Conserves", cat_coffee: "Cafè/Cacau", cat_drinks: "Begudes", cat_snacks: "Snacks/Dolços", cat_frozen: "Congelats", cat_cleaning: "Neteja", cat_hygiene: "Higiene", cat_paper: "Paper/Varis", cat_pets: "Mascotes",
             btn_pay: "PAGAR", cafe_title: "☕ Convida'm a un Cafè", cafe_desc: "<strong>SuperMart</strong> és una aplicació 100% gratuïta i sense anuncis.", pay_revolut: "💳 Pagar amb Targeta / Google Pay", pay_paypal: "🅿️ Pagar amb PayPal",
-            tut_title: "📖 Com usar SuperMart v3.2.0", tut_step1_b: "Abans de sortir:", tut_step1: "Prepara la teva llista des de casa.", tut_step2_b: "Al súper:", tut_step2: "Ajusta els preus amb el llapis (✏️).", 
+            tut_title: "📖 Com usar SuperMart v3.2.1", tut_step1_b: "Abans de sortir:", tut_step1: "Prepara la teva llista des de casa.", tut_step2_b: "Al súper:", tut_step2: "Ajusta els preus amb el llapis (✏️).", 
             tut_step3_scan_b: "🧾 Novetat Escàner:", tut_step3_scan: "Fes servir el botó flotant 🧾 per fotografiar el teu tiquet de paper. Els preus i productes es col·locaran automàticament.",
             tut_step3_b: "Control de despesa:", tut_step3: "El semàfor t'avisarà del pressupost.", tut_step4_b: "En acabar:", tut_step4: "Prem PAGAR.", btn_understood: "Entès!",
             calc_title: "🧮 Calculadora", calc_use: "📋 Usar", offer_title: "⚖️ Calculador d'Oferta:", price_label: "Preu:", grams_label: "Grams:", units_label: "Uts:",
@@ -791,7 +816,11 @@
             zone_entrance: "Zona 1: Entrada i Frescos", zone_dry: "Zona 2: Passadissos Secs", zone_cold: "Zona 3: Murals de Fred i Carna", zone_home: "Zona 4: Neteja", zone_checkout: "Zona 5: Sortida i Congelats",
             scanner_title: "Escàner de tiquets", scanner_sub: "Escaneja el teu tiquet de paper després de comprar. Si és llarg, fes-li diverses fotos.",
             btn_photo_ticket: "Toca per fotografiar tiquet", photo_tip: "Apropa la càmera per a més nitidesa", ocr_local_tip: "Processat localment al teu mòbil",
-            acc_items_title: "Productes Detectats:", btn_add_more_photos: "📸 Afegir un altre tram del tiquet", btn_cancel: "Cancel·lar", btn_import_app: "Importar A L'App!"
+            acc_items_title: "Productes Detectats:", btn_add_more_photos: "📸 Afegir un altre tram del tiquet", btn_cancel: "Cancel·lar", btn_import_app: "Importar A L'App!",
+            prod_apples: "Pomes", prod_bananas: "Plàtans", prod_tomatoes: "Tomàquets", prod_lettuce: "Enciam",
+            prod_chicken_breast: "Pit de Pollastre", prod_minced_meat: "Carn Picada", prod_detergent: "Detergent",
+            prod_floor_cleaner: "Fregaterres", prod_pack_milk: "Pack Llet 6L", prod_liter_milk: "Llitre Llet",
+            prod_lentils_can: "Llenties de Brossa", prod_chickpeas: "Cigrons", prod_olives_can: "Olives de Brossa", prod_tuna_can: "Tonyina en Lata"
         }
     };
 
@@ -857,15 +886,44 @@
         });
     }
 
+    // Estructura de productos base con IDs para traducción dinámica multilenguaje
     const frecuentesBase = {
-        'Fruta': [{nombre: 'Manzanas', precio: 2.20, enCasa: false}, {nombre: 'Plátanos', precio: 1.80, enCasa: false}],
-        'Verdura': [{nombre: 'Tomates', precio: 2.10, enCasa: false}, {nombre: 'Lechuga', precio: 1.00, enCasa: false}],
-        'Carne': [{nombre: 'Pechuga Pollo', precio: 6.50, enCasa: false}, {nombre: 'Carne Picada', precio: 5.00, enCasa: false}],
-        'Limpieza': [{nombre: 'Detergente', precio: 4.50, enCasa: false}, {nombre: 'Fregasuelos', precio: 1.80, enCasa: false}],
-        'Leche': [{nombre: 'Pack Leche 6L', precio: 6.90, enCasa: false}, {nombre: 'Litro Leche', precio: 1.15, enCasa: false}],
-        'Pasta/Arroz': [{nombre: 'Lentejas Bote', precio: 0.90, enCasa: false}, {nombre: 'Garbanzos', precio: 1.10, enCasa: false}],
-        'Conservas': [{nombre: 'Aceitunas Bote', precio: 1.45, enCasa: false}, {nombre: 'Lata Atún', precio: 2.50, enCasa: false}]
+        'Fruta': [
+            { id_prod: 'prod_apples', nombre: 'Manzanas', precio: 2.20, enCasa: false },
+            { id_prod: 'prod_bananas', nombre: 'Plátanos', precio: 1.80, enCasa: false }
+        ],
+        'Verdura': [
+            { id_prod: 'prod_tomatoes', nombre: 'Tomates', precio: 2.10, enCasa: false },
+            { id_prod: 'prod_lettuce', nombre: 'Lechuga', precio: 1.00, enCasa: false }
+        ],
+        'Carne': [
+            { id_prod: 'prod_chicken_breast', nombre: 'Pechuga Pollo', precio: 6.50, enCasa: false },
+            { id_prod: 'prod_minced_meat', nombre: 'Carne Picada', precio: 5.00, enCasa: false }
+        ],
+        'Limpieza': [
+            { id_prod: 'prod_detergent', nombre: 'Detergente', precio: 4.50, enCasa: false },
+            { id_prod: 'prod_floor_cleaner', nombre: 'Fregasuelos', precio: 1.80, enCasa: false }
+        ],
+        'Leche': [
+            { id_prod: 'prod_pack_milk', nombre: 'Pack Leche 6L', precio: 6.90, enCasa: false },
+            { id_prod: 'prod_liter_milk', nombre: 'Litro Leche', precio: 1.15, enCasa: false }
+        ],
+        'Pasta/Arroz': [
+            { id_prod: 'prod_lentils_can', nombre: 'Lentejas Bote', precio: 0.90, enCasa: false },
+            { id_prod: 'prod_chickpeas', nombre: 'Garbanzos', precio: 1.10, enCasa: false }
+        ],
+        'Conservas': [
+            { id_prod: 'prod_olives_can', nombre: 'Aceitunas Bote', precio: 1.45, enCasa: false },
+            { id_prod: 'prod_tuna_can', nombre: 'Lata Atún', precio: 2.50, enCasa: false }
+        ]
     };
+
+    function obtenerNombreProducto(prod) {
+        if (prod.id_prod && i18n[langKey] && i18n[langKey][prod.id_prod]) {
+            return i18n[langKey][prod.id_prod];
+        }
+        return prod.nombre;
+    }
 
     let habituales = frecuentesBase;
     let limitePresupuesto = 150;
@@ -969,7 +1027,8 @@
     function sumarFrecuentePorIndice(index) {
         if (!habituales[categoriaActiva] || !habituales[categoriaActiva][index]) return;
         const prod = habituales[categoriaActiva][index];
-        sumar(prod.nombre, prod.precio, categoriaActiva);
+        const nombreUsar = obtenerNombreProducto(prod);
+        sumar(nombreUsar, prod.precio, categoriaActiva);
     }
 
     function editarPrecioDirectoCarro(id, nuevoValorStr) {
@@ -1099,8 +1158,9 @@
         let coincidenciasDirectas = [];
         for (let cat in habituales) {
             habituales[cat].forEach(p => {
-                if(p.nombre.toLowerCase().includes(txt)) {
-                    coincidenciasDirectas.push({ ...p, categoria: cat });
+                const nombreVisual = obtenerNombreProducto(p);
+                if(nombreVisual.toLowerCase().includes(txt) || p.nombre.toLowerCase().includes(txt)) {
+                    coincidenciasDirectas.push({ ...p, nombreVisual: nombreVisual, categoria: cat });
                 }
             });
         }
@@ -1111,7 +1171,7 @@
             coincidenciasDirectas.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'sugerencia-item';
-                div.innerHTML = `<span><strong>${item.nombre}</strong> (${item.categoria})</span><span style="color:var(--azul); font-weight:bold;">📂 ${langKey === 'es' ? 'Ver en categoría' : 'View in category'}</span>`;
+                div.innerHTML = `<span><strong>${item.nombreVisual}</strong> (${item.categoria})</span><span style="color:var(--azul); font-weight:bold;">📂 ${langKey === 'es' ? 'Ver en categoría' : 'View in category'}</span>`;
                 div.onclick = () => {
                     document.getElementById('buscador').value = '';
                     sugBox.style.display = 'none';
@@ -1171,20 +1231,23 @@
             cont.innerHTML = `<p style='font-size:12px; color:gray;'>${langKey === 'es' ? 'No hay productos frecuentes aún.' : 'No frequent products yet.'}</p>`;
             return;
         }
-        cont.innerHTML = lista.map((prod, index) => `
-            <div class="item-habitual-card ${prod.enCasa ? 'en-casa' : ''}">
-                <div class="item-habitual-info">
-                    <strong>${prod.nombre} ${prod.enCasa ? (langKey === 'es' ? '✅ (En casa)' : '✅ (At home)') : ''}</strong>
-                    <span class="item-habitual-precio-badge" style="background:${prod.precio > 0 ? 'var(--azul)' : 'var(--rojo)'}">${prod.precio > 0 ? parseFloat(prod.precio).toFixed(2) + '€' : '⚠️ 0.00€'}</span>
+        cont.innerHTML = lista.map((prod, index) => {
+            const nombreMostrar = obtenerNombreProducto(prod);
+            return `
+                <div class="item-habitual-card ${prod.enCasa ? 'en-casa' : ''}">
+                    <div class="item-habitual-info">
+                        <strong>${nombreMostrar} ${prod.enCasa ? (langKey === 'es' ? '✅ (En casa)' : '✅ (At home)') : ''}</strong>
+                        <span class="item-habitual-precio-badge" style="background:${prod.precio > 0 ? 'var(--azul)' : 'var(--rojo)'}">${prod.precio > 0 ? parseFloat(prod.precio).toFixed(2) + '€' : '⚠️ 0.00€'}</span>
+                    </div>
+                    <div class="item-habitual-acciones">
+                        <button class="btn-mini" style="background:${prod.enCasa ? 'var(--verde)' : 'rgba(0,0,0,0.1)'}; color:${prod.enCasa ? 'white' : 'var(--texto)'}" onclick="toggleEnCasa(${index})" title="Marcar en casa">🏠</button>
+                        <button class="btn-mini" style="background:rgba(0,0,0,0.15); color:var(--texto);" onclick="editarNombreYPrecioHabitual(${index})" title="Editar nombre y precio">✏️</button>
+                        <button class="btn-mini" style="background:var(--verde); color:white; padding:8px 14px;" onclick="sumarFrecuentePorIndice(${index})">+ ${langKey === 'es' ? 'Añadir' : 'Add'}</button>
+                        <button class="btn-mini" style="background:var(--rojo); color:white;" onclick="eliminarHabitual(${index})">🗑️</button>
+                    </div>
                 </div>
-                <div class="item-habitual-acciones">
-                    <button class="btn-mini" style="background:${prod.enCasa ? 'var(--verde)' : 'rgba(0,0,0,0.1)'}; color:${prod.enCasa ? 'white' : 'var(--texto)'}" onclick="toggleEnCasa(${index})" title="Marcar en casa">🏠</button>
-                    <button class="btn-mini" style="background:rgba(0,0,0,0.15); color:var(--texto);" onclick="editarNombreYPrecioHabitual(${index})" title="Editar nombre y precio">✏️</button>
-                    <button class="btn-mini" style="background:var(--verde); color:white; padding:8px 14px;" onclick="sumarFrecuentePorIndice(${index})">+ ${langKey === 'es' ? 'Añadir' : 'Add'}</button>
-                    <button class="btn-mini" style="background:var(--rojo); color:white;" onclick="eliminarHabitual(${index})">🗑️</button>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     function toggleEnCasa(index) {
@@ -1196,8 +1259,8 @@
 
     function editarNombreYPrecioHabitual(index) {
         const prod = habituales[categoriaActiva][index];
-        const nombreAnterior = prod.nombre;
-        const nuevoNombre = prompt(`${langKey === 'es' ? 'Corregir nombre del producto' : 'Edit product name'}:`, prod.nombre);
+        const nombreAnterior = obtenerNombreProducto(prod);
+        const nuevoNombre = prompt(`${langKey === 'es' ? 'Corregir nombre del producto' : 'Edit product name'}:`, nombreAnterior);
         if (nuevoNombre === null || nuevoNombre.trim() === '') return;
 
         const nuevoPrecioStr = prompt(`${langKey === 'es' ? 'Actualizar precio para' : 'Update price for'} "${nuevoNombre.trim()}":`, prod.precio > 0 ? parseFloat(prod.precio).toFixed(2) : '0.00');
@@ -1209,6 +1272,8 @@
             return;
         }
 
+        // Si se edita manualmente el nombre, eliminamos la clave id_prod para fijar el texto del usuario
+        delete prod.id_prod;
         prod.nombre = nuevoNombre.trim();
         prod.precio = nuevoPrecio;
         guardarDatosDB('habituales_v130', habituales);
@@ -1240,6 +1305,7 @@
         if (isNaN(precio) || precio < 0) precio = 0.00;
 
         if(!habituales[categoriaActiva]) habituales[categoriaActiva] = [];
+        // Guardamos el producto nuevo personalizado sin clave id_prod
         habituales[categoriaActiva].push({ nombre: nombre, precio: precio, enCasa: false });
         
         guardarDatosDB('habituales_v130', habituales);
@@ -1595,13 +1661,65 @@
                     </div>
                     <div id="det-compra-${compra.id}" class="tarjeta-compra-detalle" style="display:${index === 0 ? 'block' : 'none'};">
                         ${compra.productos.map(p => `<div style="margin-bottom:6px;">• <strong>${p.nombre}</strong> (${p.unidades}x ${p.precioUnitario.toFixed(2)}€) = <strong>${p.total.toFixed(2)}€</strong></div>`).join('')}
-                        <div style="margin-top:10px; text-align:right;">
-                            <a href="${urlWp}" target="_blank" style="background:#25D366; color:white; padding:6px 12px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:bold; display:inline-block;"><i class="fab fa-whatsapp"></i> ${langKey === 'es' ? 'Compartir Ticket' : 'Share Receipt'}</a>
+                        <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                            <button class="btn-mini" style="background:var(--verde); color:white; padding:6px 12px; font-size:13px; font-weight:bold;" onclick="recargarCompraAlCarro(${compra.id})">
+                                <i class="fas fa-cart-plus"></i> ${langKey === 'es' ? 'Volver a comprar' : 'Reorder'}
+                            </button>
+                            <a href="${urlWp}" target="_blank" style="background:#25D366; color:white; padding:6px 12px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:bold; display:inline-block;">
+                                <i class="fab fa-whatsapp"></i> ${langKey === 'es' ? 'Compartir Ticket' : 'Share Receipt'}
+                            </a>
                         </div>
                     </div>
                 </div>
             `;
         }).join('');
+    }
+
+    function recargarCompraAlCarro(idCompra) {
+        const compra = historialCompras.find(c => c.id === idCompra);
+        if (!compra || !compra.productos || compra.productos.length === 0) return;
+
+        const confirmar = confirm(
+            langKey === 'es' 
+                ? `¿Quieres añadir los ${compra.productos.length} productos de esta compra al carro actual?` 
+                : `Add all ${compra.productos.length} items from this purchase to your current cart?`
+        );
+
+        if (!confirmar) return;
+
+        let añadidos = 0;
+
+        compra.productos.forEach(prodOriginal => {
+            const pNum = parseFloat(prodOriginal.precioUnitario) || 0;
+            const cant = parseInt(prodOriginal.unidades) || 1;
+            const existente = carroActual.find(item => item.nombre.toLowerCase() === prodOriginal.nombre.toLowerCase());
+
+            if (existente) {
+                existente.unidades += cant;
+                existente.precioUnitario = pNum;
+                existente.total = existente.unidades * existente.precioUnitario;
+            } else {
+                carroActual.push({
+                    id: Date.now() + Math.random(),
+                    nombre: prodOriginal.nombre,
+                    categoria: prodOriginal.categoria || 'Papel/Varios',
+                    precioUnitario: pNum,
+                    unidades: cant,
+                    total: pNum * cant,
+                    cogido: false
+                });
+            }
+            añadidos++;
+        });
+
+        actualizar();
+        cerrarModal('modal-historial');
+        mostrarToast(
+            langKey === 'es' 
+                ? `🛒 ¡${añadidos} productos añadidos al carro!` 
+                : `🛒 ¡${añadidos} items added to cart!`, 
+            'exito'
+        );
     }
 
     function eliminarCompraUnica(id) {
@@ -1659,7 +1777,7 @@
     }
 
     function desvincularDispositivo() {
-        if(confirm(langKey === 'es' ? "¿Quieres desvincular este dispositivo?\nSe generará una clave UID totalmente nueva e independent." : "Unlink this device?\nA completely new independent UID key will be generated.")) {
+        if(confirm(langKey === 'es' ? "¿Quieres desvincular este dispositivo?\nSe generará una clave UID totalmente nueva e independiente." : "Unlink this device?\nA completely new independent UID key will be generated.")) {
             localStorage.removeItem('supermart_uid');
             alert("🔄 Dispositivo desvinculado. Reiniciando app para generar un nuevo código único...");
             location.reload();
