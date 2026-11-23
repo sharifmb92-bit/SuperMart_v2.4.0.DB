@@ -1,23 +1,28 @@
-const CACHE_NAME = 'supermart-v3-2-2';
+// SuperMart_v 3.2.5 - Service Worker
+// Autor: medbasha
+
+const CACHE_NAME = 'supermart-v3-2-5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-152.png'
+  './icon-512.png'
 ];
 
-// Instalación y precarga de recursos estáticos
+// Instalación y almacenamiento en caché inicial
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+      return Promise.allSettled(
+        ASSETS_TO_CACHE.map((url) => cache.add(url))
+      );
     })
   );
+  self.skipWaiting();
 });
 
-// Activación y limpieza inmediata de cachés anteriores
+// Activación y eliminación de versiones antiguas de caché
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -28,26 +33,26 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }).then(() => self.clients.claim())
+    })
   );
+  self.clients.claim();
 });
 
-// Estrategia Network-First con respaldo offline
+// Estrategia Network-First con respaldo en caché para funcionamiento offline seguro
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-
-  // Ignorar peticiones de Firebase Firestore para no interferir con la sincronización en vivo
-  if (event.request.url.includes('firestore.googleapis.com')) {
-    return;
-  }
 
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && event.request.url.startsWith(self.location.origin)) {
-          const responseClone = networkResponse.clone();
+        if (
+          networkResponse &&
+          networkResponse.status === 200 &&
+          networkResponse.type === 'basic'
+        ) {
+          const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
+            cache.put(event.request, responseToCache);
           });
         }
         return networkResponse;
