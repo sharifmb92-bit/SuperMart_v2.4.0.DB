@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SuperMart_v 3.2.5</title>
+    <title>SuperMart_v 3.2.6</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- PWA -->
@@ -22,8 +22,8 @@
         }
         body.noche { --fondo: #2c1e16; --tarjeta: #5d4037; --texto: #f5f5f5; }
 
-        html { height: 100%; min-height: 100dvh; }
-        body { font-family: sans-serif; background: var(--fondo); margin: 0; min-height: 100dvh; box-sizing: border-box; padding-bottom: calc(260px + env(safe-area-inset-bottom, 0px)); color: white; transition: 0.3s; overflow-x: hidden; position: relative; }
+        html { width: 100%; max-width: 100%; min-height: 100vh; min-height: 100dvh; box-sizing: border-box; overflow-x: hidden; overflow-x: clip; }
+        body { width: 100%; max-width: 100%; font-family: sans-serif; background: var(--fondo); margin: 0; min-height: 100vh; min-height: 100dvh; box-sizing: border-box; padding-bottom: calc(260px + env(safe-area-inset-bottom, 0px)); color: white; transition: 0.3s; position: relative; }
         
         .header { background: var(--tarjeta); padding: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.3); color: var(--texto); }
         .controles-extra { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -66,11 +66,11 @@
         .historial { background: rgba(0,0,0,0.2); margin: 10px; padding: 12px; border-radius: 10px; font-size: 14px; cursor: pointer; transition: 0.2s; }
         .historial:active { background: rgba(0,0,0,0.35); }
 
-        .panel-fijo { position: fixed; bottom: 0; left: 0; right: 0; background: #2D3436; padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px; border-top: 3px solid var(--tarjeta); z-index: 200; }
+        .panel-fijo { position: fixed; bottom: 0; left: 0; right: 0; background: #2D3436; padding: 12px calc(12px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px)); border-top: 3px solid var(--tarjeta); z-index: 200; }
         .fila-ajuste { display: flex; justify-content: space-around; align-items: center; max-width: 1200px; margin: 0 auto; }
         .btn-a { width: 50px; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-        .btn-escaner-flotante { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); right: 18px; z-index: 250; background: #d35400; color: white; width: 58px; height: 58px; border-radius: 29px; border: 2px solid #f39c12; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .btn-escaner-flotante { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); right: calc(18px + env(safe-area-inset-right, 0px)); z-index: 250; background: #d35400; color: white; width: 58px; height: 58px; border-radius: 29px; border: 2px solid #f39c12; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; transition: 0.2s; }
         .btn-escaner-flotante:active { transform: scale(0.92); }
 
         .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 300; align-items: center; justify-content: center; padding: 15px; }
@@ -132,7 +132,34 @@
 
         .f { color: #D35400; } .c { color: #A93226; } .l { color: #2E86C1; } .h { color: #512E5F; } .d { color: #795548; }
 
-        .brand-stamp { position: absolute; bottom: 5px; right: 8px; font-size: 9px; opacity: 0.35; color: var(--texto); pointer-events: none; user-select: none; display: flex; align-items: center; gap: 4px; z-index: 10; }
+        .brand-stamp { position: absolute; bottom: 5px; right: calc(8px + env(safe-area-inset-right, 0px)); font-size: 9px; opacity: 0.35; color: var(--texto); pointer-events: none; user-select: none; display: flex; align-items: center; gap: 4px; z-index: 10; }
+
+        /* Adaptación fluida en modo horizontal (móviles tumbados y tablets) */
+        @media (orientation: landscape) {
+            body { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
+            .pantalla { grid-template-columns: repeat(4, 1fr) !important; gap: 10px; }
+            .titulo-zona-seccion { grid-column: span 4 !important; }
+            .modal-contenido { max-width: 540px; max-height: 88vh; }
+        }
+
+        @media (orientation: landscape) and (max-height: 540px) {
+            .header { padding: 6px 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+            .controles-extra { margin-bottom: 0; flex: 0 0 auto; gap: 6px; }
+            .btn-mini { padding: 5px 9px; font-size: 12px; }
+            .buscador-caja { margin-bottom: 0; flex: 1 1 180px; min-width: 150px; }
+            .buscador-input { padding: 6px 10px; font-size: 14px; }
+            .total-info { flex: 0 0 auto; gap: 10px; }
+            .total-info h1 { font-size: 14px !important; }
+            #total { font-size: 20px; }
+            .contenedor-semaforo { margin: 2px 0; height: 6px; flex-basis: 100%; }
+            .tabs { flex-basis: 100%; padding: 0; margin-bottom: 0; }
+            .tab { padding: 6px; font-size: 12px; }
+            .boton { padding: 8px; border-radius: 12px; }
+            .boton i { font-size: 20px; margin-bottom: 4px; }
+            .panel-fijo { padding: 6px calc(12px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px)); }
+            .btn-a { width: 42px; height: 42px; font-size: 12px; }
+            .btn-escaner-flotante { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); width: 48px; height: 48px; font-size: 20px; }
+        }
 
         @media (min-width: 768px) {
             .header, .historial, .pantalla { max-width: 1000px; margin-left: auto; margin-right: auto; }
@@ -168,7 +195,7 @@
 
     <div class="total-info">
         <div>
-            <h1 style="margin:0; font-size:18px;">🛒 <span data-i18n="app_heading">Gasto Familiar</span> <span class="version-badge">v3.2.5</span></h1>
+            <h1 style="margin:0; font-size:18px;">🛒 <span data-i18n="app_heading">Gasto Familiar</span> <span class="version-badge">v3.2.6</span></h1>
             <small id="status">Límite: 150.00€</small>
         </div>
         <div class="total-caja"><span id="total">0.00€</span></div>
@@ -357,7 +384,7 @@
 <div class="modal" id="modal-tutorial">
     <div class="modal-contenido">
         <div class="modal-header">
-            <h3 style="margin:0;" data-i18n="tut_title">📖 Cómo usar SuperMart v3.2.5</h3>
+            <h3 style="margin:0;" data-i18n="tut_title">📖 Cómo usar SuperMart v3.2.6</h3>
             <button class="btn-mini" onclick="cerrarModal('modal-tutorial')">✕</button>
         </div>
         <div style="font-size:13px; line-height:1.6;">
@@ -675,7 +702,7 @@
         }
 
         const VER_KEY = 'supermart_version_instalada';
-        const VERSION_ACTUAL = '3.2.5_clean';
+        const VERSION_ACTUAL = '3.2.6_clean';
 
         if (localStorage.getItem(VER_KEY) !== VERSION_ACTUAL) {
             if ('caches' in window) {
@@ -948,7 +975,7 @@
             cafe_title: "☕ Invítame a un Café",
             cafe_desc: "<strong>SuperMart</strong> es una aplicación 100% gratuita y libre de anuncios.<br><br>Si te resulta útil para gestionar tus compras diarias, puedes hacer una pequeña aportación. Puedes pagar con <strong>tarjeta normal, Google Pay o PayPal</strong> de forma rápida y segura.",
             pay_revolut: "💳 Pagar con Tarjeta o Google Pay (Revolut)", pay_paypal: "🅿️ Pagar con PayPal",
-            tut_title: "📖 Cómo usar SuperMart v3.2.5",
+            tut_title: "📖 Cómo usar SuperMart v3.2.6",
             tut_step1_b: "Antes de salir:", tut_step1: "Abre la app y entra en cada categoría. Guarda lo que necesitas comprando o apuntando nuevos productos (incluso con 0.00€ para apuntarlo desde casa).",
             tut_step2_b: "En el súper:", tut_step2: "Si un producto tiene 0.00€ o ha cambiado de precio, toca el lápiz (✏️) para poner su valor real antes de añadirlo al carro.",
             tut_step3_scan_b: "🧾 Escáner de Tickets:", tut_step3_scan: "Usa el botón flotante 🧾 para fotografiar tu recibo de papel tras comprar. Los precios y productos se colocarán en sus tarjetas solas.",
@@ -989,7 +1016,7 @@
             cafe_title: "☕ Buy me a Coffee",
             cafe_desc: "<strong>SuperMart</strong> is 100% free with no ads.<br><br>Support the app with card, Google Pay or PayPal.",
             pay_revolut: "💳 Pay with Card or Google Pay (Revolut)", pay_paypal: "🅿️ Pay with PayPal",
-            tut_title: "📖 How to use SuperMart v3.2.5",
+            tut_title: "📖 How to use SuperMart v3.2.6",
             tut_step1_b: "Before shopping:", tut_step1: "Open the app and check each category. Add items to your list at home even at €0.00.",
             tut_step2_b: "At the store:", tut_step2: "Tap the pencil (✏️) to set exact prices before adding items to your cart.",
             tut_step3_scan_b: "🧾 Receipt Scanner:", tut_step3_scan: "Use the floating button 🧾 to photograph your paper receipt after shopping. Prices and items will automatically update in your cards.",
@@ -1029,7 +1056,7 @@
             btn_pay: "PAYER", pay_modal_title: "💳 Enregistrer l'achat", pay_modal_sub: "Dans quel supermarché avez-vous acheté ?", btn_confirm_save: "Enregistrer",
             cafe_title: "☕ Offrez-moi un café",
             cafe_desc: "<strong>SuperMart</strong> est gratuit et sans publicité.", pay_revolut: "💳 Payer par Carte / Google Pay", pay_paypal: "🅿️ Payer avec PayPal",
-            tut_title: "📖 Guide d'utilisation v3.2.5", tut_step1_b: "Avant de sortir:", tut_step1: "Préparez votre liste à la maison.", tut_step2_b: "En magasin:", tut_step2: "Ajustez les prix avec le crayon (✏️).", 
+            tut_title: "📖 Guide d'utilisation v3.2.6", tut_step1_b: "Avant de sortir:", tut_step1: "Préparez votre liste à la maison.", tut_step2_b: "En magasin:", tut_step2: "Ajustez les prix avec le crayon (✏️).", 
             tut_step3_scan_b: "🧾 Scanner:", tut_step3_scan: "Utilisez le bouton flottant 🧾 pour photographier votre reçu en papier. Les prix et produits se placeront automatiquement.",
             tut_step3_b: "Budget:", tut_step3: "Contrôlez la barre de couleur.", tut_step4_b: "Fini:", tut_step4: "Appuyez sur PAYER.", btn_understood: "Compris!",
             calc_title: "🧮 Calculatrice", calc_use: "📋 Utiliser", offer_title: "⚖️ Calculateur d'offre:", price_label: "Prix:", grams_label: "Grammes:", units_label: "Qté:",
@@ -1060,7 +1087,7 @@
             cat_oils: "Oli", cat_canned: "Conserve", cat_coffee: "Caffè/Cacao", cat_drinks: "Bevande", cat_snacks: "Snack/Dolci", cat_frozen: "Surgelati", cat_cleaning: "Pulizia", cat_hygiene: "Igiene", cat_paper: "Carta/Varie", cat_pets: "Animali",
             btn_pay: "PAGA", pay_modal_title: "💳 Salva Acquisto", pay_modal_sub: "In quale supermercato hai fatto la spesa?", btn_confirm_save: "Salva Scontrino",
             cafe_title: "☕ Offrimi un caffè", cafe_desc: "<strong>SuperMart</strong> è gratuita e senza pubblicità.", pay_revolut: "💳 Paga con Carta / Google Pay", pay_paypal: "🅿️ Paga con PayPal",
-            tut_title: "📖 Come usare SuperMart v3.2.5", tut_step1_b: "Prima di uscire:", tut_step1: "Prepara la lista da casa.", tut_step2_b: "Al supermercato:", tut_step2: "Usa la matita (✏️) per impostare il prezzo.", 
+            tut_title: "📖 Come usare SuperMart v3.2.6", tut_step1_b: "Prima di uscire:", tut_step1: "Prepara la lista da casa.", tut_step2_b: "Al supermercato:", tut_step2: "Usa la matita (✏️) per impostare il prezzo.", 
             tut_step3_scan_b: "🧾 Scanner:", tut_step3_scan: "Usa il pulsante galleggiante 🧾 per fotografare lo scontrino cartaceo. Prezzi e prodotti si aggiorneranno automaticamente.",
             tut_step3_b: "Controllo spese:", tut_step3: "La barra indica il budget.", tut_step4_b: "Finito:", tut_step4: "Premi PAGA.", btn_understood: "Capito!",
             calc_title: "🧮 Calcolatrice", calc_use: "📋 Usa", offer_title: "⚖️ Calcolatore Offerta:", price_label: "Prezzo:", grams_label: "Grammi:", units_label: "Qtà:",
@@ -1091,7 +1118,7 @@
             cat_oils: "Öle", cat_canned: "Konserven", cat_coffee: "Kaffee/Kakao", cat_drinks: "Getränke", cat_snacks: "Snacks/Süßes", cat_frozen: "Tiefkühlkost", cat_cleaning: "Reinigung", cat_hygiene: "Hygiene", cat_paper: "Papier/Sonstiges", cat_pets: "Tiere",
             btn_pay: "BEZAHLEN", pay_modal_title: "💳 Einkauf speichern", pay_modal_sub: "In welchem Supermarkt hast du eingekauft?", btn_confirm_save: "Speichern",
             cafe_title: "☕ Kaufe mir einen Kaffee", cafe_desc: "<strong>SuperMart</strong> ist 100% kostenlos ohne Werbung.", pay_revolut: "💳 Mit Karte / Google Pay zahlen", pay_paypal: "🅿️ Mit PayPal zahlen",
-            tut_title: "📖 Anleitung v3.2.5", tut_step1_b: "Vor dem Einkauf:", tut_step1: "Erstelle deine Liste zu Hause.", tut_step2_b: "Im Laden:", tut_step2: "Ändere den Preis mit dem Stift (✏️).", 
+            tut_title: "📖 Anleitung v3.2.6", tut_step1_b: "Vor dem Einkauf:", tut_step1: "Erstelle deine Liste zu Hause.", tut_step2_b: "Im Laden:", tut_step2: "Ändere den Preis mit dem Stift (✏️).", 
             tut_step3_scan_b: "🧾 Beleg-Scanner:", tut_step3_scan: "Nutze den schwebenden Button 🧾, um deinen Papierbeleg zu fotografieren. Preise und Artikel werden automatisch zugeordnet.",
             tut_step3_b: "Budgetkontrolle:", tut_step3: "Achte auf den Farbbalten.", tut_step4_b: "Fertig:", tut_step4: "Tippe auf BEZAHLEN.", btn_understood: "Verstanden!",
             calc_title: "🧮 Rechner", calc_use: "📋 Nutzen", offer_title: "⚖️ Angebotsrechner:", price_label: "Preis:", grams_label: "Gramm:", units_label: "Menge:",
@@ -1122,7 +1149,7 @@
             cat_oils: "Óleos", cat_canned: "Conservas", cat_coffee: "Café/Cacau", cat_drinks: "Bebidas", cat_snacks: "Doces/Snacks", cat_frozen: "Congelados", cat_cleaning: "Limpeza", cat_hygiene: "Higiene", cat_paper: "Papel/Vários", cat_pets: "Animais",
             btn_pay: "PAGAR", pay_modal_title: "💳 Guardar Compra", pay_modal_sub: "Em que supermercado comprou?", btn_confirm_save: "Guardar",
             cafe_title: "☕ Pague-me um café", cafe_desc: "<strong>SuperMart</strong> é 100% gratuito e sem anúncios.", pay_revolut: "💳 Pagar com Cartão / Google Pay", pay_paypal: "🅿️ Pagar com PayPal",
-            tut_title: "📖 Como usar SuperMart v3.2.5", tut_step1_b: "Antes de sair:", tut_step1: "Prepare a lista em casa.", tut_step2_b: "No supermercado:", tut_step2: "Ajuste preços com o lápis (✏️).", 
+            tut_title: "📖 Como usar SuperMart v3.2.6", tut_step1_b: "Antes de sair:", tut_step1: "Prepare a lista em casa.", tut_step2_b: "No supermercado:", tut_step2: "Ajuste preços com o lápis (✏️).", 
             tut_step3_scan_b: "🧾 Scanner:", tut_step3_scan: "Use o botão flutuante 🧾 para fotografar o seu recibo de papel. Os preços e produtos serão atualizados automaticamente.",
             tut_step3_b: "Controlo de gastos:", tut_step3: "Veja a barra de orçamento.", tut_step4_b: "Ao terminar:", tut_step4: "Toque em PAGAR.", btn_understood: "Entendido!",
             calc_title: "🧮 Calculadora", calc_use: "📋 Usar", offer_title: "⚖️ Calculadora de Oferta:", price_label: "Preço:", grams_label: "Gramas:", units_label: "Qtd:",
@@ -1153,7 +1180,7 @@
             cat_oils: "Olis", cat_canned: "Conserves", cat_coffee: "Cafè/Cacau", cat_drinks: "Begudes", cat_snacks: "Snacks/Dolços", cat_frozen: "Congelats", cat_cleaning: "Neteja", cat_hygiene: "Higiene", cat_paper: "Paper/Varis", cat_pets: "Mascotes",
             btn_pay: "PAGAR", pay_modal_title: "💳 Finalitzar i Guardar", pay_modal_sub: "A quin supermercat has comprat?", btn_confirm_save: "Guardar Tiquet",
             cafe_title: "☕ Convida'm a un Cafè", cafe_desc: "<strong>SuperMart</strong> és una aplicació 100% gratuïta i sense anuncis.", pay_revolut: "💳 Pagar amb Targeta / Google Pay", pay_paypal: "🅿️ Pagar amb PayPal",
-            tut_title: "📖 Com usar SuperMart v3.2.5", tut_step1_b: "Abans de sortir:", tut_step1: "Prepara la teva llista des de casa.", tut_step2_b: "Al súper:", tut_step2: "Ajusta els preus amb el llapis (✏️).", 
+            tut_title: "📖 Com usar SuperMart v3.2.6", tut_step1_b: "Abans de sortir:", tut_step1: "Prepara la teva llista des de casa.", tut_step2_b: "Al súper:", tut_step2: "Ajusta els preus amb el llapis (✏️).", 
             tut_step3_scan_b: "🧾 Escàner:", tut_step3_scan: "Fes servir el botó flotant 🧾 per fotografiar el teu tiquet de paper. Els preus i productes es col·locaran automàticament.",
             tut_step3_b: "Control de despesa:", tut_step3: "El semàfor t'avisarà del pressupost.", tut_step4_b: "En acabar:", tut_step4: "Prem PAGAR.", btn_understood: "Entès!",
             calc_title: "🧮 Calculadora", calc_use: "📋 Usar", offer_title: "⚖️ Calculador d'Oferta:", price_label: "Preu:", grams_label: "Grams:", units_label: "Uts:",
