@@ -1,7 +1,7 @@
-// SuperMart_v 3.2.5 - Service Worker
+// SuperMart_v 3.2.6 - Service Worker
 // Autor: medbasha
 
-const CACHE_NAME = 'supermart-v3-2-5';
+const CACHE_NAME = 'supermart-v3-2-6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
